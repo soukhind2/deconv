@@ -103,7 +103,7 @@ class expdesign:
 
         signal = fmrisim.apply_signal(signal_func_scaled,self.loadvolume.signal_volume,)
 
-        self.brain = signal #+ self.loadvolume.noise
+        self.brain = signal + self.loadvolume.noise
         
         return self.brain
     

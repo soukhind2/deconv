@@ -23,6 +23,8 @@ from scipy.integrate import quad,simps
 from scipy.integrate import trapz
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
+import importlib as imp
+import matplotlib.pyplot as plt
 pca = PCA(n_components = 10)
 p1 = np.zeros((19,19))
 
@@ -36,12 +38,12 @@ for lisi in range(1,19):
     for uisi in range(1,19):
         if lisi > uisi:
             continue
-        d = design.expdesign(1, lisi, uisi, 0.1, 100, [0.05], lv)
+        d = design.expdesign(1, lisi, uisi, 0.1, 100, [102], lv)
         data = d.tcourse()
         e = design.expanalyse(data, np.array([1]), expdesign = d)
         p1[lisi-1,uisi-1] = e.calc_Fd()
         p2[lisi-1,uisi-1] = e.calc_Fe(ncond = 1)
-        a1[lisi-1,uisi-1] = trapz(e.roi,dx =1)
+        a1[lisi-1,uisi-1] = trapz(e.roi/np.mean(e.roi)*100-100,dx =1)
         out = avgHRF(e.expdesign.onsets_A, e.roi, e.expdesign.loadvolume.tr)
         pca.fit(out)
         c1[lisi-1,uisi-1] = pca.explained_variance_[0]
@@ -49,14 +51,17 @@ for lisi in range(1,19):
         c3[lisi-1,uisi-1] = pca.explained_variance_[2]
         if uisi == 14 and lisi == 2:
             exroi1 = e.roi
+            out1 = avgHRF(e.expdesign.onsets_A, e.roi, e.expdesign.loadvolume.tr)
             onsetA1 = d.onsets_A
             print('regis 1')
         elif uisi == 17 and lisi == 4:
             exroi2 = e.roi
+            out2 = avgHRF(e.expdesign.onsets_A, e.roi, e.expdesign.loadvolume.tr)
             onsetA2 = d.onsets_A
             print('regis 2')
         elif uisi == 17 and lisi == 7:
             exroi3 = e.roi
+            out3 = avgHRF(e.expdesign.onsets_A, e.roi, e.expdesign.loadvolume.tr)
             onsetA3 = d.onsets_A
             print('regis 3')
         elif uisi == 8 and lisi == 5:
@@ -80,7 +85,7 @@ for lisi in range(1,19):
         
 #%%
 from tools import plotdata
-plotdata.plotdata(p1,p2,2500,3)
+plotdata.plotdata(p1,p2,150,3)
 #%%
 
 temp = e.roi.reshape(1,e.roi.shape[0])
@@ -100,23 +105,9 @@ def avgHRF(onsets,brain,tr):
         
     return out
 
-out = avgHRF(e.expdesign.onsets_A, e.roi, e.expdesign.loadvolume.tr)
+#out = avgHRF(e.expdesign.onsets_A, e.roi, e.expdesign.loadvolume.tr)
 #%%
-onsets = e.expdesign.onsets_A
-brain = e.roi
-tr = e.expdesign.loadvolume.tr
-res = 20
-out = np.zeros((len(onsets),res))
-for i in range(0,len(onsets)):
-    start = (onsets[i] / tr).astype('int')
-    series_A = np.linspace(start - 3,start + 16,res).astype('int')
-    if series_A[-1]  >= brain.shape[0]:
-        break
-    else:
-        out[i,:] = brain[series_A]
-
-        
-        
+from scipy.signal import savgol_filter as saf
         
         
         

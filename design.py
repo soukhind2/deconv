@@ -35,6 +35,7 @@ class expdesign:
         time = self.burn_in
         nevents = 0
         total_time = int(self.loadvolume.dim[3] * self.loadvolume.tr) + self.burn_in  # How long is the total event time course
+        
         while time <= (total_time - 5) :
         #while nevents <= self.total_events:
 
@@ -44,11 +45,13 @@ class expdesign:
                                                              self.upper_isi)
             nevents = nevents + 1
  
-        
+
 
         #total_time = time
 
         self.onsets_A = self.onsets_A[:-2].transpose()
+       
+        #self.onsets_A = [10,11,100,200,202]
         #self.onsets_B = np.sort(np.random.choice(self.onsets_B,
                                                  #int(len(self.onsets_B)*self.cue_r)
                                                  #,replace = False))
@@ -100,7 +103,7 @@ class expdesign:
 
         signal = fmrisim.apply_signal(signal_func_scaled,self.loadvolume.signal_volume,)
 
-        self.brain = signal + self.loadvolume.noise
+        self.brain = signal #+ self.loadvolume.noise
         
         return self.brain
     

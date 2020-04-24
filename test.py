@@ -43,9 +43,8 @@ for lisi in range(1,19):
         e = design.expanalyse(data, np.array([1]), expdesign = d)
         p1[lisi-1,uisi-1] = e.calc_Fd()
         p2[lisi-1,uisi-1] = e.calc_Fe(ncond = 1)
-        m_data = e.roi/np.mean(e.roi)*100-100
-        a1[lisi-1,uisi-1] = trapz(m_data,dx = 1)
-        out = avgHRF(e.expdesign.onsets_A, m_data, e.expdesign.loadvolume.tr)
+        a1[lisi-1,uisi-1] = trapz(e.roi/np.mean(e.roi)*100-100,dx =1)
+        out = avgHRF(e.expdesign.onsets_A, e.roi, e.expdesign.loadvolume.tr)
         pca.fit(out)
         c1[lisi-1,uisi-1] = pca.explained_variance_[0]
         c2[lisi-1,uisi-1] = pca.explained_variance_[1]

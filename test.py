@@ -27,7 +27,6 @@ import importlib as imp
 import matplotlib.pyplot as plt
 pca = PCA(n_components = 10)
 p1 = np.zeros((19,19))
-
 p2 = np.zeros((19,19))
 a1 = np.zeros((19,19))
 c1 = np.zeros((19,19))
@@ -43,8 +42,9 @@ for lisi in range(1,19):
         e = design.expanalyse(data, np.array([1]), expdesign = d)
         p1[lisi-1,uisi-1] = e.calc_Fd()
         p2[lisi-1,uisi-1] = e.calc_Fe(ncond = 1)
-        a1[lisi-1,uisi-1] = trapz(e.roi/np.mean(e.roi)*100-100,dx =1)
-        out = avgHRF(e.expdesign.onsets_A, e.roi, e.expdesign.loadvolume.tr)
+        temp = e.roi/np.mean(e.roi)*100-100
+        a1[lisi-1,uisi-1] = trapz(temp,dx =1)
+        out = avgHRF(e.expdesign.onsets_A, temp, e.expdesign.loadvolume.tr)
         pca.fit(out)
         c1[lisi-1,uisi-1] = pca.explained_variance_[0]
         c2[lisi-1,uisi-1] = pca.explained_variance_[1]
@@ -85,11 +85,8 @@ for lisi in range(1,19):
         
 #%%
 from tools import plotdata
-plotdata.plotdata(p1,p2,150,3)
-#%%
-
-temp = e.roi.reshape(1,e.roi.shape[0])
-pca.fit(out)
+plotdata.plotdata(p1,a1,200,70)
+#plotdata.plotdata(c1,c3,4500,4500)
 
 #%%
 def avgHRF(onsets,brain,tr):

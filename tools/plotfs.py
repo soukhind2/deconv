@@ -39,3 +39,15 @@ def plotdata(data1,data2,max1 ,max2 ,title1 = "Detection Power",
     plt.yticks(np.arange(0,len(data2),2), labels)
     return fig
 
+def avgHRF(onsets,brain,tr):
+    res = 20
+    out = np.zeros((len(onsets),res))
+    for i in range(0,len(onsets)):
+        start = (onsets[i] / tr).astype('int')
+        series_A = np.linspace(start - 3,start + 16,res).astype('int')
+        if series_A[-1]  >= brain.shape[0]:
+            break
+        else:
+            out[i,:] = brain[series_A]
+        
+    return out

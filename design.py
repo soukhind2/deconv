@@ -37,7 +37,6 @@ class expdesign:
         f = 0 # Variable to iter between two conditions 
         nevents = 0
         total_time = int(self.loadvolume.dim[3] * self.loadvolume.tr) + self.burn_in  # How long is the total event time course
-        """
         while time <= (total_time - 5) :
         #while nevents <= self.total_events:
             if f == 0:
@@ -55,15 +54,14 @@ class expdesign:
                 f = 0;
                 nevents = nevents + 1
 
+        
         #total_time = time
 
-        self.onsets_A = self.onsets_A[:-2].transpose()
-        self.onsets_B = self.onsets_B[:-2].transpose()
+        self.onsets_A = self.onsets_A.transpose()
+        self.onsets_B = self.onsets_B.transpose()
         self.onsets_B = np.sort(np.random.choice(self.onsets_B,
                                                  int(len(self.onsets_B)*self.cue_r)
-                                                 ,replace = False))"""
-        self.onsets_A = [10,12,100,200,300]
-        self.onsets_B = [50,52,102,204,350]
+                                                 ,replace = False))
         stimfunc_A = np.empty((0,1))
         stimfunc_B = np.empty((0,1))
 
@@ -96,7 +94,7 @@ class expdesign:
         signal_func = fmrisim.convolve_hrf(stimfunction=stimfunc_weighted,
                                            tr_duration=self.loadvolume.tr,
                                            temporal_resolution=self.temporal_res,
-                                           scale_function=0,)
+                                           scale_function=1)
         
         # Specify the parameters for signal
         signal_method = 'PSC'
@@ -118,7 +116,7 @@ class expdesign:
 
         signal = fmrisim.apply_signal(signal_func_scaled,self.loadvolume.signal_volume,)
 
-        self.brain = signal #+ self.loadvolume.noise
+        self.brain = signal + self.loadvolume.noise
         
         return self.brain
     
@@ -170,7 +168,7 @@ class expanalyse:
         out = 1/np.matrix.trace(o)
         return out
     
-    def calc_FIR(self,ncond,hrflen = 16):
+    def calc_FIR(self,ncond,hrflen = 30):
         nCond = ncond
         hrflen = hrflen
         self.X_FIR = np.zeros((len(self.roi),hrflen*nCond))
@@ -193,7 +191,7 @@ class expanalyse:
         return self.X_FIR
                     
                     
-    def calc_Fe(self,ncond,hrflen = 16):
+    def calc_Fe(self,ncond,hrflen = 30):
         hrflen = hrflen
         X_FIR = self.calc_FIR(ncond)
         temp = sm.OLS(self.roi,sm.add_constant(X_FIR)).fit()

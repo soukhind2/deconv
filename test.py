@@ -37,9 +37,9 @@ for lisi in np.arange(1,19,1):
         if lisi > uisi:
             l+=1
             continue
-        d = design.expdesign(1, lisi, uisi, 0.1, 100, [102], lv)
+        d = design.expdesign(1, lisi, uisi, 0.1, 100, [2], lv)
         data = d.tcourse()
-        e = design.expanalyse(data, np.array([1,0]), expdesign = d)
+        e = design.expanalyse(data, np.array([1, 0]), expdesign = d)
         p1[k,l] = e.calc_Fd()
         p2[k,l] = e.calc_Fe(ncond = 2)
         temp = e.roi/np.mean(e.roi)*100-100
@@ -52,11 +52,14 @@ for lisi in np.arange(1,19,1):
         
 #%%
 from tools import plotfs
-fig = plotfs.plotdata(a1,p1,100,70,normalize = False)
+fig = plotfs.plotdata(p2,p1,200,70,normalize = True)
 #fig.savefig("Figures/Singletrial/st_det_heff.png",dpi = 600,bbox_inches = 'tight')
 #plotdata.plotdata(c1,c3,4500,4500)
-
-        
-        
+#%%
+from numpy.fft import fft
+from tools._dghrf import _dghrf
+x = np.concatenate(np.zeros(30),np.array(_dghrf()),np.zeros(30))
+plt.plot(x)
+plt.xlim(0,0.1)
         
         

@@ -6,6 +6,8 @@ Created on Tue Apr 14 15:57:16 2020
 @author: sdas
 """
 import math
+from scipy.stats import gamma
+
 
 def _dghrf(response_delay=6,
                       undershoot_delay=12,
@@ -20,7 +22,7 @@ def _dghrf(response_delay=6,
     Moerkerke, Verdoolaege and Rosseel, 2011
     """
 
-    hrf_length = 16  # How long is the HRF being created
+    hrf_length = 30  # How long is the HRF being created
 
     # How many seconds of the HRF will you model?
     hrf = [0] * int(hrf_length * temporal_resolution)
@@ -53,3 +55,14 @@ def _dghrf(response_delay=6,
         hrf[hrf_counter] = response_model - undershoot_model
 
     return hrf
+
+def hrf2(times):
+    """ Return values for HRF at given times """
+    # Gamma pdf for the peak
+    peak_values = gamma.pdf(times, 6)
+    # Gamma pdf for the undershoot
+    undershoot_values = gamma.pdf(times, 12)
+    # Combine them
+    values = peak_values - 0.35 * undershoot_values     
+    # Scale max to 0.6
+    return values

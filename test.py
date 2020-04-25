@@ -39,9 +39,9 @@ for lisi in np.arange(1,19,1):
             continue
         d = design.expdesign(1, lisi, uisi, 0.1, 100, [102], lv)
         data = d.tcourse()
-        e = design.expanalyse(data, np.array([1]), expdesign = d)
+        e = design.expanalyse(data, np.array([1,0]), expdesign = d)
         p1[k,l] = e.calc_Fd()
-        p2[k,l] = e.calc_Fe(ncond = 1)
+        p2[k,l] = e.calc_Fe(ncond = 2)
         temp = e.roi/np.mean(e.roi)*100-100
         a1[k,l] = trapz(temp,dx =1)
         
@@ -52,7 +52,7 @@ for lisi in np.arange(1,19,1):
         
 #%%
 from tools import plotfs
-fig = plotfs.plotdata(a1,p1,200,70,normalize = True)
+fig = plotfs.plotdata(a1,p1,100,70,normalize = False)
 #fig.savefig("Figures/Singletrial/st_det_heff.png",dpi = 600,bbox_inches = 'tight')
 #plotdata.plotdata(c1,c3,4500,4500)
 

@@ -24,6 +24,7 @@ from scipy.integrate import trapz
 import matplotlib.pyplot as plt
 import importlib as imp
 import matplotlib.pyplot as plt
+#%matplotlib qt
 p1 = np.zeros((18,18))
 p2 = np.zeros((18,18))
 a1 = np.zeros((18,18))
@@ -52,14 +53,23 @@ for lisi in np.arange(1,19,1):
         
 #%%
 from tools import plotfs
-fig = plotfs.plotdata(p2,p1,200,70,normalize = True)
+fig = plotfs.plotdata(p1,p2,200,70,normalize = True)
 #fig.savefig("Figures/Singletrial/st_det_heff.png",dpi = 600,bbox_inches = 'tight')
 #plotdata.plotdata(c1,c3,4500,4500)
 #%%
 from numpy.fft import fft
-from tools._dghrf import _dghrf
-x = np.concatenate(np.zeros(30),np.array(_dghrf()),np.zeros(30))
-plt.plot(x)
-plt.xlim(0,0.1)
+from scipy.signal import periodogram
+from tools._dghrf import _dghrf,hrf2
+hrf = np.asarray(_dghrf())
+y = np.asarray(hrf2(np.arange(30)))
+zero = np.zeros(30)
+x = np.concatenate((zero,y,zero))
+#plt.plot(hrf)
+#plt.plot(fft(x))
+p = periodogram(x,1)
+plt.plot(p[1])
+labels = np.round(p[0],2).astype(str)
+plt.xticks(np.arange(30),labels)
+
         
         

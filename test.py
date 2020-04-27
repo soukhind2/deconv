@@ -24,52 +24,62 @@ from scipy.integrate import trapz
 import matplotlib.pyplot as plt
 import importlib as imp
 import matplotlib.pyplot as plt
+cue_ratio = np.array([1,0.9,0.8,0.7,0.6,0.5]) 
 #%matplotlib qt
-p1 = np.zeros((18,18))
-p2 = np.zeros((18,18))
-a1 = np.zeros((18,18))
+uisi = np.arange(2,21,2)
+lisi = 2
+c1 = np.zeros((len(cue_ratio),len(uisi)))
+c2 = np.zeros((len(cue_ratio),len(uisi)))
+sumc1 = np.zeros((10,len(cue_ratio),len(uisi)))
+sumc2 = np.zeros((10,len(cue_ratio),len(uisi)))
 
 
-k = 0
-
-for lisi in np.arange(1,19,1):
-    l = 0
-    for uisi in np.arange(1,19,1):
-        if lisi > uisi:
-            l+=1
-            continue
-        d = design.expdesign(1, lisi, uisi, 0.1, 100, [2], lv)
-        data = d.tcourse()
-        e = design.expanalyse(data, np.array([1, 0]), expdesign = d)
-        p1[k,l] = e.calc_Fd()
-        p2[k,l] = e.calc_Fe(ncond = 2)
-        temp = e.roi/np.mean(e.roi)*100-100
-        a1[k,l] = trapz(temp,dx =1)
+for count in range(0,10):
+    c1 = np.zeros((len(cue_ratio),len(uisi)))
+    c2 = np.zeros((len(cue_ratio),len(uisi)))
+    k = 0
+    for ratio in cue_ratio:
+        l = 0
+        for y in uisi:
+            if lisi > y:
+                continue
+            lower_isi = lisi
+            upper_isi = y
+            d = design.expdesign(ratio, lisi, y, 0.1, 100, [2], lv)
+            data = d.tcourse()
+            e = design.expanalyse(data, np.array([1, 0]), expdesign = d)
+            c1[k,l] = e.calc_Fd()
+            c2[k,l] = e.calc_Fe(ncond = 2)
+            l = l + 1
         
-        l += 1
-    k += 1
-    print(lisi)
+        k += 1
+    sumc1[count] = c1
+    sumc2[count] = c2
+    print(count)
 
         
 #%%
-from tools import plotfs
-fig = plotfs.plotdata(p1,p2,200,70,normalize = True)
-#fig.savefig("Figures/Singletrial/st_det_heff.png",dpi = 600,bbox_inches = 'tight')
-#plotdata.plotdata(c1,c3,4500,4500)
-#%%
-from numpy.fft import fft
-from scipy.signal import periodogram
-from tools._dghrf import _dghrf,hrf2
-hrf = np.asarray(_dghrf())
-y = np.asarray(hrf2(np.arange(30)))
-zero = np.zeros(30)
-x = np.concatenate((zero,y,zero))
-#plt.plot(hrf)
-#plt.plot(fft(x))
-p = periodogram(x,1)
-plt.plot(p[1])
-labels = np.round(p[0],2).astype(str)
-plt.xticks(np.arange(30),labels)
+avgc1 = np.mean(sumc1,0)
+avgc2 = np.mean(sumc2,0)
+avgc1.shape
 
-        
+#%%
+fig= plt.figure()
+ax = fig.add_subplot(111)
+plt.plot(avgc1[0],'-D',label = '0',c = 'red')
+plt.plot(avgc1[1],'-o',label = '0.1',c = 'black')
+plt.plot(avgc1[2],'-o',label = '0.2',c = 'orange')
+plt.plot(avgc1[3],'-x',label = '0.3',c = 'lime')
+plt.plot(avgc1[4],'-h',label = '0.4',c = 'violet')
+plt.plot(avgc1[5],'-*',label = '0.5',c = 'blue')
+plt.legend(loc = 4,title = 'Proportion')
+#ax.set_xlabel('Upper Bound of SOA')
+ax.set_ylabel('Detection Power')
+#ax.set_ylabel('HRF Estimation Eff.')
+#ax.set_title('HRF Estimation Eff. for Different Cue Only Trial Proportions(lsoa = 4)')
+ax.set_title('Detection Power for Different Cue Only Trial Proportions(lsoa = 2)')
+labels = uisi.astype(str)
+labels[0] = '2s Const. ISI'
+plt.xticks(np.arange(0,len(uisi),1), labels)
+#plt.scatter(avgc1[0],avgc2[0])
         

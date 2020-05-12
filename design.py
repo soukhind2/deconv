@@ -39,19 +39,18 @@ class expdesign:
         total_time = int(self.loadvolume.dim[3] * self.loadvolume.tr) + self.burn_in  # How long is the total event time course
         while time <= (total_time - 5) :
         #while nevents <= self.total_events:
-            if f == 0:
+            f = np.random.multinomial(1,[0.5]*2,1)[0,0]
+            if  f:
                 self.onsets_A = np.append(self.onsets_A, time)
                 self.onsets_all = np.append(self.onsets_all,time)
                 time = time + self.event_duration + np.random.uniform(self.lower_isi, 
                                                                  self.upper_isi)
-                f = 1;
                 nevents = nevents + 1
             else:
                 self.onsets_B = np.append(self.onsets_B, time)
                 self.onsets_all = np.append(self.onsets_all,time)
                 time = time + self.event_duration + np.random.uniform(self.lower_isi, 
                                                                  self.upper_isi)
-                f = 0;
                 nevents = nevents + 1
 
         
@@ -94,7 +93,7 @@ class expdesign:
         signal_func = fmrisim.convolve_hrf(stimfunction=stimfunc_weighted,
                                            tr_duration=self.loadvolume.tr,
                                            temporal_resolution=self.temporal_res,
-                                           scale_function=1)
+                                           scale_function=1,squash = False)
         
         # Specify the parameters for signal
         signal_method = 'PSC'

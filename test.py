@@ -32,15 +32,15 @@ a1 = np.zeros((20,20))
 
 k = 0
 
-for lisi in np.arange(1,21,1):
+for lisi in np.arange(1,5,0.2):
     l = 0
-    for uisi in np.arange(1,21,1):
+    for uisi in np.arange(1,5,0.2):
         if lisi > uisi:
             l+=1
             continue
-        d = design.expdesign(1, lisi, uisi, 0.1, 100, [2], lv)
+        d = design.expdesign(1, lisi, uisi, 0.1, 100, [5], lv)
         data = d.tcourse()
-        e = design.expanalyse(data, np.array([1, 0]), expdesign = d)
+        e = design.expanalyse(data, np.array([1, 1]), expdesign = d)
         p1[k,l] = e.calc_Fd()
         p2[k,l] = e.calc_Fe(ncond = 2)
         temp = e.roi/np.mean(e.roi)*100-100

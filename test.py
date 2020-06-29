@@ -52,11 +52,17 @@ for lisi in np.arange(1,19,1):
         
 #%%
 from tools import plotfs
-fig = plotfs.plotdata(a1,p1,200,70,normalize = True)
+fig = plotfs.plotdata(p1,p2,200,70,normalize = True)
 #fig.savefig("Figures/Singletrial/st_det_heff.png",dpi = 600,bbox_inches = 'tight')
 #plotdata.plotdata(c1,c3,4500,4500)
 
         
-        
-        
-        
+#%%
+
+
+
+d = design.expdesign(1, 2, 8, 0.1, 4, [102], lv , noise = False)
+data = d.tcourse()  
+e = design.expanalyse(data, np.array([1]), expdesign = d)
+plt.plot(e.roi)
+plt.plot(d.stimfunc_weighted*600)

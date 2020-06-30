@@ -52,9 +52,31 @@ class expdesign:
         None.
 
         '''
+        tr = int(self.temporal_res)
         for i in np.arange(0,len(etrain)):
             if etrain[i] == 1:
-                etrain[i+1:i+15] = 0.66
+                
+                if l <= 7 and u <= 9:
+                    etrain[ i + 1 : i + 1 + tr * 1 ] = 0.66                    
+                elif ((l <= 7 and u >= 10 and u <= 13) or (l <= 5 and u >= 14)
+                      or (l == 8 and u >= 8 and u <= 9)
+                      or (l == 9 and u == 9)):
+                    etrain[ i + 1 : i + 1 + tr * 4 ] = 0.66                    
+                    
+                elif (((l == 6 or l == 7) and u >= 14 and u <= 20) 
+                      or ((l >=8 and l <= 10) and u >= 10 and u <= 13)
+                      or ((l >= 10 and l <= 13) and u >= 11 and u <= 13)):
+                    etrain[ i + 1 + tr*int(l/2)  : i + 1 + tr*int(l/2) + tr*1 ] = 0.66                    
+
+                    
+                elif (((l == 8 or l == 9) and u >= 14 and u <= 20) 
+                    or ((l == 10 or l == 11) and u >= 14 and u <= 20)
+                    or ((l >= 12 and l <= 14) and u >= 14 and u <= 20)
+                    or ((l == 14 or l == 15) and u >= 15 and u <= 20)
+                    or (l >= 16 and u >= 15 and u <= 20)):
+                    etrain[ i + 1 + tr*int(l/2)  : i + 1 + tr*int(l/2) + tr*4 ] = 0.66
+                
+                
         
         return etrain
     
@@ -66,8 +88,8 @@ class expdesign:
         nevents = 0
         total_time = int(self.loadvolume.dim[3] * self.loadvolume.tr) + self.burn_in  # How long is the total event time course
         
-        #while time <= (total_time - 5) :
-        while nevents <= self.total_events:
+        while time <= (total_time - 5) :
+        #while nevents <= self.total_events:
 
             self.onsets_A = np.append(self.onsets_A, time)
             self.onsets_all = np.append(self.onsets_all,time)
@@ -77,7 +99,7 @@ class expdesign:
  
 
 
-        total_time = time
+        #total_time = time
 
         self.onsets_A = self.onsets_A[:-2].transpose()
        
@@ -95,7 +117,7 @@ class expdesign:
 
         
         
-        
+        #Transient activity introduction
         stimfunc_A = self.transient(stimfunc_A,self.lower_isi,self.upper_isi)
 
         weights_A = np.matlib.repmat(stimfunc_A, 1, self.loadvolume.voxels).transpose() * pattern_A
@@ -112,8 +134,7 @@ class expdesign:
         signal_func = fmrisim.convolve_hrf(stimfunction=self.stimfunc_weighted,
                                            tr_duration=self.loadvolume.tr,
                                            temporal_resolution=self.temporal_res,
-                                           scale_function=0,squash = False)
-        self.temp = signal_func
+                                           scale_function=0,squash = True)
         
         # Specify the parameters for signal
         #signal_method = 'CNR_Amp/Noise-SD'

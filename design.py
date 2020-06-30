@@ -28,10 +28,40 @@ class expdesign:
         self.loadvolume = loadvolume
         self.signal_magnitude = signal_mag
         self.noise = noise
+        
+        
+    def transient(self,etrain,l,u,profile = 'flat',load = 'step'):
+        '''
+        
+        Parameters
+        ----------
+        def transient : ndarray
+        etrain = default weighted stimfunction array
+        l = lower bound of isi
+        u = upper bound of isi
+        profile = type of transient activity
+            'flat': sustained activity
+            'attn': U shaped transient behaviour
+        load = type of stimulus load for working memory related tasks
+            'step': step transient activity for Working Memory tasks
+            'linear': linear transient activity for WM tasks
+            'non linear': non linear transient actitvity for WM tasks
+
+        Returns: Modified height adjusted stimweight array with transient properties
+        -------
+        None.
+
+        '''
+        for i in np.arange(0,len(etrain)):
+            if etrain[i] == 1:
+                etrain[i+1:i+15] = 0.66
+        
+        return etrain
+    
 
     def tcourse(self):
         pattern_A = np.ones((27,1))
-        
+        np.random.seed(10)
         time = self.burn_in
         nevents = 0
         total_time = int(self.loadvolume.dim[3] * self.loadvolume.tr) + self.burn_in  # How long is the total event time course
@@ -47,16 +77,14 @@ class expdesign:
  
 
 
-        #total_time = time
+        total_time = time
 
         self.onsets_A = self.onsets_A[:-2].transpose()
        
-        self.onsets_A = [10,100,150,200,250]
-        #self.onsets_B = np.sort(np.random.choice(self.onsets_B,
-                                                 #int(len(self.onsets_B)*self.cue_r)
-                                                 #,replace = False))
+        #self.onsets_A = [10,100,150,200,250]
+        
         stimfunc_A = np.empty((0,1))
-        #stimfunc_B = np.empty((0,1))
+        
 
 
         stimfunc_A = fmrisim.generate_stimfunction(onsets=self.onsets_A,
@@ -66,29 +94,18 @@ class expdesign:
                                                    )
 
         
-        onsets_A1 = [11,102,153,204,252,254,256,258,260]
-        stimfunc_A1 = fmrisim.generate_stimfunction(onsets=onsets_A1,
-                                                   event_durations=[self.event_duration],
-                                                   total_time=total_time,
-                                                   temporal_resolution=self.temporal_res,
-                                                   )
         
         
-        pattern_A1 = np.ones((27,1))*0.66
-
-        # Multiply each pattern by each voxel time course
-        weights_A = np.empty((0,1))
+        stimfunc_A = self.transient(stimfunc_A,self.lower_isi,self.upper_isi)
 
         weights_A = np.matlib.repmat(stimfunc_A, 1, self.loadvolume.voxels).transpose() * pattern_A
-        
-        weights_A1 = np.empty((0,1))
-        weights_A1 = np.matlib.repmat(stimfunc_A1,1,self.loadvolume.voxels).transpose() * pattern_A1
+
         
         # Sum these time courses together
         stimfunc_weighted = np.empty((0,1))
         stimfunc_weighted = weights_A
         
-        stimfunc_weighted = transient(stimfunc_weighted,boxcar_A,self.lower_isi,self.upper_isi)
+        
         
         self.stimfunc_weighted = stimfunc_weighted.transpose()
         
@@ -96,6 +113,7 @@ class expdesign:
                                            tr_duration=self.loadvolume.tr,
                                            temporal_resolution=self.temporal_res,
                                            scale_function=0,squash = False)
+        self.temp = signal_func
         
         # Specify the parameters for signal
         #signal_method = 'CNR_Amp/Noise-SD'
@@ -124,28 +142,9 @@ class expdesign:
         
         return self.brain
     
-    def transient(self,etrain,boxcar_A,l,u,profile = 'flat'):
-        '''
+    
         
-        Parameters
-        ----------
-        def transient : ndarray
-        etrain = default weighted stimfunction array
-        l = lower bound of isi
-        u = upper bound of isi
-        profile = type of transient activity
-        'flat': sustained activity
-        'attn': U shaped transient behaviour
-        'step': step transient activity for Working Memory tasks
-        'linear': linear transient activity for WM tasks
-        'non linear': non linear transient actitvity for WM tasks
-
-        Returns: Modified height adjusted stimweight array with transient properties
-        -------
-        None.
-
-        '''
-
+        
     
 class expanalyse:
      

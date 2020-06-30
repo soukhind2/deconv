@@ -60,9 +60,14 @@ fig = plotfs.plotdata(p1,p2,200,70,normalize = True)
 #%%
 
 
-
-d = design.expdesign(1, 2, 8, 0.1, 4, [102], lv , noise = False)
+fig= plt.figure()
+d = design.expdesign(1, 2, 8, 0.1, 100, [102], lv , noise = False)
 data = d.tcourse()  
 e = design.expanalyse(data, np.array([1]), expdesign = d)
 plt.plot(e.roi)
 plt.plot(d.stimfunc_weighted*600)
+plt.plot(d.temp)
+#%%
+fig= plt.figure()
+plt.plot(e.boxcar_A)
+plt.plot(d.temp)

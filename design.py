@@ -134,7 +134,7 @@ class expdesign:
         signal_func = fmrisim.convolve_hrf(stimfunction=self.stimfunc_weighted,
                                            tr_duration=self.loadvolume.tr,
                                            temporal_resolution=self.temporal_res,
-                                           scale_function=0,squash = True)
+                                           scale_function=0,squash = False)
         
         # Specify the parameters for signal
         #signal_method = 'CNR_Amp/Noise-SD'

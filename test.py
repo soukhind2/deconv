@@ -37,7 +37,7 @@ for lisi in np.arange(1,19,1):
         if lisi > uisi:
             l+=1
             continue
-        d = design.expdesign(1, lisi, uisi, 0.1, 100, [0.02], lv,noise = True)
+        d = design.expdesign(1, lisi, uisi, 0.1, 100, [102], lv,noise = True)
         data = d.tcourse()
         e = design.expanalyse(data, np.array([1]), expdesign = d)
         p1[k,l] = e.calc_Fd()
@@ -62,11 +62,10 @@ plt.plot(d.stimfunc_weighted*600)
 #%%
 
 fig= plt.figure()
-d = design.expdesign(1, 2, 8, 0.1, 100, [102], lv , noise = False)
+d = design.expdesign(1, 2, 3, 0.1, 100, [102], lv , noise = True)
 data = d.tcourse()  
 e = design.expanalyse(data, np.array([1]), expdesign = d)
 plt.plot(e.roi)
-plt.plot(d.temp)
 #%%
 fig= plt.figure()
 plt.plot(e.boxcar_A)

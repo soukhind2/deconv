@@ -38,11 +38,11 @@ for lisi in np.arange(1,19,1):
         if lisi > uisi:
             l+=1
             continue
-        d = design.expdesign(1, lisi, uisi, 0.1, 100, [2], lv)
+        d = design.expdesign(1, lisi, uisi, 0.1, 100, [2], lv, noise = True)
         data = d.tcourse()
         e = design.expanalyse(data, np.array([1, 0]), expdesign = d)
         p1[k,l] = e.calc_Fd()
-        p2[k,l] = e.calc_Fe(ncond = 2)
+        p2[k,l] = e.calc_Fe(ncond =2)
         temp = e.roi/np.mean(e.roi)*100-100
         a1[k,l] = trapz(temp,dx =1)
         
@@ -70,6 +70,7 @@ p = periodogram(x,1)
 plt.plot(p[1])
 labels = np.round(p[0],2).astype(str)
 plt.xticks(np.arange(30),labels)
-
+#%%
+plt.plot(d.temp)
         
         

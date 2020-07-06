@@ -54,7 +54,7 @@ for lisi in np.arange(1,19,1):
 #%%
 from tools import plotfs
 fig = plotfs.plotdata(p1,p2,200,70,normalize = True)
-#fig.savefig("Figures/Singletrial/st_det_heff.png",dpi = 600,bbox_inches = 'tight')
+#fig.savefig("Figures/Doubletrial/dt_det_heff_nontrans_0.1.png",dpi = 600,bbox_inches = 'tight')
 #plotdata.plotdata(c1,c3,4500,4500)
 #%%
 from numpy.fft import fft

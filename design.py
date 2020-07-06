@@ -43,7 +43,8 @@ class expdesign:
         profile = type of transient activity
             'flat': sustained activity
             'attn': U shaped transient behaviour
-        load = type of stimulus load for working memory related tasks
+        load = type of stimulus load for working memory related tasks. This does NOT 
+        depend on ISI parameters, these are stimulus dependent.
             'step': step transient activity for Working Memory tasks
             'linear': linear transient activity for WM tasks
             'non linear': non linear transient actitvity for WM tasks
@@ -56,16 +57,16 @@ class expdesign:
             if etrain[i] == 1:
                 
                 if l <= 7 and u <= 9:
-                    etrain[ i + 1 : i + 1 + tr * 1 ] = 0.66                    
+                    etrain[ i + 1 : i + 1 + tr * 1 ] = 0.33                    
                 elif ((l <= 7 and u >= 10 and u <= 13) or (l <= 5 and u >= 14)
                       or (l == 8 and u >= 8 and u <= 9)
                       or (l == 9 and u == 9)):
-                    etrain[ i + 1 : i + 1 + tr * 4 ] = 0.66                    
+                    etrain[ i + 1 : i + 1 + tr * 4 ] = 0.33                    
                     
                 elif (((l == 6 or l == 7) and u >= 14 and u <= 20) 
                       or ((l >=8 and l <= 10) and u >= 10 and u <= 13)
                       or ((l >= 10 and l <= 13) and u >= 11 and u <= 13)):
-                    etrain[ i + 1 + tr*int(l/2)  : i + 1 + tr*int(l/2) + tr*1 ] = 0.66                    
+                    etrain[ i + 1 + tr*int(l/2)  : i + 1 + tr*int(l/2) + tr*1 ] = 0.33                    
 
                     
                 elif (((l == 8 or l == 9) and u >= 14 and u <= 20) 
@@ -73,7 +74,7 @@ class expdesign:
                     or ((l >= 12 and l <= 14) and u >= 14 and u <= 20)
                     or ((l == 14 or l == 15) and u >= 15 and u <= 20)
                     or (l >= 16 and u >= 15 and u <= 20)):
-                    etrain[ i + 1 + tr*int(l/2)  : i + 1 + tr*int(l/2) + tr*4 ] = 0.66
+                    etrain[ i + 1 + tr*int(l/2)  : i + 1 + tr*int(l/2) + tr*4 ] = 0.33
                 
                 
         
@@ -82,7 +83,7 @@ class expdesign:
 
     def tcourse(self):
         pattern_A = np.ones((27,1))
-        pattern_B = 1 * np.ones((27,1))
+        pattern_B =1 * np.ones((27,1))
         time = self.burn_in
         f = 0 # Variable to iter between two conditions 
         nevents = 0

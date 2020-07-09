@@ -5,7 +5,7 @@ Created on Thu Apr 16 23:38:21 2020
 
 @author: soukhind
 """
-
+ 
 import loadvolume
 
 lv = loadvolume.loadvolume('Participant_03_rest_run02.nii')
@@ -32,7 +32,7 @@ a1 = np.zeros((18,18))
 
 k = 0
 
-for lisi in np.arange(1,19,1):
+for lisi in np.arange(1,16,1):
     l = 0
     for uisi in np.arange(1,19,1):
         if lisi > uisi:
@@ -53,8 +53,8 @@ for lisi in np.arange(1,19,1):
         
 #%%
 from tools import plotfs
-fig = plotfs.plotdata(p1,p2,200,70,normalize = True)
-#fig.savefig("Figures/Doubletrial/dt_det_heff_nontrans_0.1.png",dpi = 600,bbox_inches = 'tight')
+fig = plotfs.plotdata(a1,p2,200,70,normalize = True)
+fig.savefig("Figures/Doubletrial/dt_det_heff_trans_.png",dpi = 600,bbox_inches = 'tight')
 #plotdata.plotdata(c1,c3,4500,4500)
 #%%
 from numpy.fft import fft
@@ -71,6 +71,7 @@ plt.plot(p[1])
 labels = np.round(p[0],2).astype(str)
 plt.xticks(np.arange(30),labels)
 #%%
+plt.figure()
 plt.plot(d.temp)
         
         

@@ -48,7 +48,8 @@ class expdesign:
             'step': step transient activity for Working Memory tasks
             'linear': linear transient activity for WM tasks
             'non linear': non linear transient actitvity for WM tasks
-        Returns: Modified height adjusted stimweight array with transient properties
+        Returns: 
+        Modified height adjusted stimweight array with transient properties
         -------
         None.
         '''
@@ -57,16 +58,16 @@ class expdesign:
             if etrain[i] == 1:
                 
                 if l <= 7 and u <= 9:
-                    etrain[ i + 1 : i + 1 + tr * 1 ] = 0.33                    
+                    etrain[ i + 1 : i + 1 + tr * 1 ] = 0.66                    
                 elif ((l <= 7 and u >= 10 and u <= 13) or (l <= 5 and u >= 14)
                       or (l == 8 and u >= 8 and u <= 9)
                       or (l == 9 and u == 9)):
-                    etrain[ i + 1 : i + 1 + tr * 4 ] = 0.33                    
+                    etrain[ i + 1 : i + 1 + tr * 4 ] = 0.66                    
                     
                 elif (((l == 6 or l == 7) and u >= 14 and u <= 20) 
                       or ((l >=8 and l <= 10) and u >= 10 and u <= 13)
                       or ((l >= 10 and l <= 13) and u >= 11 and u <= 13)):
-                    etrain[ i + 1 + tr*int(l/2)  : i + 1 + tr*int(l/2) + tr*1 ] = 0.33                    
+                    etrain[ i + 1 + tr*int(l/2)  : i + 1 + tr*int(l/2) + tr*1 ] = 0.66                    
 
                     
                 elif (((l == 8 or l == 9) and u >= 14 and u <= 20) 
@@ -74,7 +75,7 @@ class expdesign:
                     or ((l >= 12 and l <= 14) and u >= 14 and u <= 20)
                     or ((l == 14 or l == 15) and u >= 15 and u <= 20)
                     or (l >= 16 and u >= 15 and u <= 20)):
-                    etrain[ i + 1 + tr*int(l/2)  : i + 1 + tr*int(l/2) + tr*4 ] = 0.33
+                    etrain[ i + 1 + tr*int(l/2)  : i + 1 + tr*int(l/2) + tr*4 ] = 0.66
                 
                 
         
@@ -145,12 +146,12 @@ class expdesign:
         stimfunc_weighted = np.empty((0,1))
         stimfunc_weighted = weights_A1 + weights_B
         stimfunc_weighted = stimfunc_weighted.transpose()
-        
+        self.temp = stimfunc_weighted
+
         signal_func = fmrisim.convolve_hrf(stimfunction=stimfunc_weighted,
                                            tr_duration=self.loadvolume.tr,
                                            temporal_resolution=self.temporal_res,
                                            scale_function=0,squash = False)
-        self.temp = stimfunc_weighted
         # Specify the parameters for signal
         signal_method = 'PSC'
 

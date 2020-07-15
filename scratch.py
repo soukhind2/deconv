@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sat Apr 25 01:03:23 2020
-This is a scratch module to model different codes of non linear interaction between two 
+This is a scratch module. It contains different scratch scenarios.
+
+---------------------------------
+Following is to model different codes of non linear interaction between two 
 stimuli very close to each other in a event sequence.
 Primarily, 2nd order voltera kernel series has been used to model the non linearities.
 H2 or the 2nd degree kernel is set to hrf*hrf as mentioned in Friston 1998
@@ -64,30 +67,34 @@ out3 = nonlinear2(stim,hrf)
 base = np.convolve(stim,hrf)
 
 fig = plt.figure()
-ax = fig.add_subplot(511)
-plt.plot(base/np.max(base))
+# ax = fig.add_subplot(511)
+# plt.plot(base/np.max(base))
+# plt.plot(stim)
+# ax.set_title("Base")
+
+
+ax = fig.add_subplot(411)
 plt.plot(stim)
-ax.set_title("Base")
+ax.set_title("Stim Function")
 
-
-ax = fig.add_subplot(512)
+ax = fig.add_subplot(412)
 plt.plot(out)
 ax.set_title("Linear")
 
-ax = fig.add_subplot(513)
-plt.plot(out2)
+# ax = fig.add_subplot(513)
+# plt.plot(out2)
+# ax.set_title("Non Linear")
+
+ax = fig.add_subplot(413)
+plt.plot(out3)
 ax.set_title("Non Linear")
 
-ax = fig.add_subplot(514)
-plt.plot(out3)
-ax.set_title("Non Linear New")
-
-ax = fig.add_subplot(515)
+ax = fig.add_subplot(414)
 tot = out + out2/2  
-tot2 = out + 0.5*out3/2
-plt.plot(tot)
+tot2 = out + 0.1*out3/2
+#plt.plot(tot)
 plt.plot(tot2)
-plt.plot(base)
+#plt.plot(base)
 ax.set_title("Non Linear Add")
 
 
@@ -110,3 +117,32 @@ def stim_convolve(a,b):
 
 
 #%%
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jul 14 21:22:57 2020
+Created to make the WM transient activity
+@author: soukhind
+"""
+runcell(1, '/Users/soukhind/deconv/deconv/test.py')
+x = d.temp[:,1]
+y = d.temp2[:,1]
+#%%
+                
+#%%
+plt.figure()
+plt.plot(x)  
+plt.plot(y)
+#%%
+idxA = np.where(x == 1)[0][:]
+idxB = np.where(y == 1)[0][:]
+l = min(len(idxA),len(idxB))
+for i in range(l):
+    if idxA[i] > idxB[i]:
+        idxB[i] = 0
+
+for i in range(l):
+    if idxB[i]!= 0:
+        y[ idxA[i] + 1 : idxB[i] ] = 0.66
+        
+            

@@ -32,13 +32,13 @@ a1 = np.zeros((18,18))
 
 k = 0
 
-for lisi in np.arange(1,16,1):
+for lisi in np.arange(1,3,1):
     l = 0
-    for uisi in np.arange(1,19,1):
+    for uisi in np.arange(1,8,1):
         if lisi > uisi:
             l+=1
             continue
-        d = design.expdesign(1, lisi, uisi, 0.1, 100, [2], lv, noise = True)
+        d = design.expdesign(lisi, uisi, 0.1, 100, [2], lv, 1, noise = True,nonlinear = True,load = 'wmmap')
         data = d.tcourse()
         e = design.expanalyse(data, np.array([1, 0]), expdesign = d)
         p1[k,l] = e.calc_Fd()
@@ -53,8 +53,8 @@ for lisi in np.arange(1,16,1):
         
 #%%
 from tools import plotfs
-fig = plotfs.plotdata(a1,p2,200,70,normalize = True)
-fig.savefig("Figures/Doubletrial/dt_det_heff_trans_.png",dpi = 600,bbox_inches = 'tight')
+fig = plotfs.plotdata(p1,p2,200,70,normalize = True)
+fig.savefig("Figures/Doubletrial/dt_det_heff_trans_nonlin_0.1.png",dpi = 600,bbox_inches = 'tight')
 #plotdata.plotdata(c1,c3,4500,4500)
 #%%
 from numpy.fft import fft

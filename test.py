@@ -32,15 +32,9 @@ a1 = np.zeros((20,20))
 
 k = 0
 
-<<<<<<< HEAD
-for lisi in np.arange(1,3,1):
+for lisi in np.arange(1,9,1):
     l = 0
-    for uisi in np.arange(1,8,1):
-=======
-for lisi in np.arange(1,21,1):
-    l = 0
-    for uisi in np.arange(1,21,1):
->>>>>>> master
+    for uisi in np.arange(1,13,1):
         if lisi > uisi:
             l+=1
             continue

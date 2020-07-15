@@ -25,16 +25,22 @@ import matplotlib.pyplot as plt
 import importlib as imp
 import matplotlib.pyplot as plt
 #%matplotlib qt
-p1 = np.zeros((18,18))
-p2 = np.zeros((18,18))
-a1 = np.zeros((18,18))
+p1 = np.zeros((20,20))
+p2 = np.zeros((20,20))
+a1 = np.zeros((20,20))
 
 
 k = 0
 
+<<<<<<< HEAD
 for lisi in np.arange(1,3,1):
     l = 0
     for uisi in np.arange(1,8,1):
+=======
+for lisi in np.arange(1,21,1):
+    l = 0
+    for uisi in np.arange(1,21,1):
+>>>>>>> master
         if lisi > uisi:
             l+=1
             continue

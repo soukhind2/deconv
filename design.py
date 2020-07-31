@@ -90,9 +90,13 @@ class expdesign:
                     
                     if ((l <= 9 and u <= 13) or (l <= 5)):
                         for i in range(minl):
-
                             if idxB[i]!= 0:
                                 etrain2[ idxA[i] + 1 : idxB[i] ] = 0.66
+                                
+                    else:
+                        for i in range(minl):
+                            if idxB[i]!= 0:
+                                etrain2[ idxA[i] + 1 + tr*int(l/2) : idxB[i] ] = 0.66 
                 
                 else:
                     raise ValueError('Invalid transient map arguement')
@@ -145,10 +149,10 @@ class expdesign:
 
         self.onsets_A = self.onsets_A.transpose()
         self.onsets_B = self.onsets_B.transpose()
-        if self.cue_r:
+        '''if self.cue_r:
             self.onsets_B = np.sort(np.random.choice(self.onsets_B,
                                                      int(len(self.onsets_B)*self.cue_r)
-                                                     ,replace = False))
+                                                     ,replace = False))'''
         stimfunc_A = np.empty((0,1))
         stimfunc_B = np.empty((0,1))
 
@@ -167,7 +171,8 @@ class expdesign:
         
         #Transient activity introduced
         stimfunc_B1 = stimfunc_B
-        stimfunc_B1 = self.transient(stimfunc_A,stimfunc_B1,self.lower_isi,self.upper_isi)
+        if self.load:
+            stimfunc_B1 = self.transient(stimfunc_A,stimfunc_B1,self.lower_isi,self.upper_isi)
 
 
         # Multiply each pattern by each voxel time course
@@ -177,7 +182,7 @@ class expdesign:
 
         weights_A = np.matlib.repmat(stimfunc_A, 1, self.loadvolume.voxels).transpose() * pattern_A
         weights_B = np.matlib.repmat(stimfunc_B, 1, self.loadvolume.voxels).transpose() * pattern_B
-        weights_B1 = np.matlib.repmat(stimfunc_B1, 1, self.loadvolume.voxels).transpose() * pattern_A
+        weights_B1 = np.matlib.repmat(stimfunc_B1, 1, self.loadvolume.voxels).transpose() * pattern_B
 
 
         

@@ -7,14 +7,16 @@ Created on Thu Apr 16 23:38:21 2020
 """
  
 import loadvolume
-
+from tools import plotfs
+import time
 lv = loadvolume.loadvolume('Participant_03_rest_run02.nii')
 
 lv.loaddata()
 lv.loadmask()
 lv.generate_noise()
 lv.generate_region()
-
+maxp1 = 0
+maxp2 = 0
 #%%
 
 import design
@@ -27,34 +29,45 @@ import matplotlib.pyplot as plt
 #%matplotlib qt
 p1 = np.zeros((20,20))
 p2 = np.zeros((20,20))
-a1 = np.zeros((20,20))
 
 
 k = 0
-
-for lisi in np.arange(1,9,1):
+paradigm = 'attn'
+cue_ratio = 0.9
+start = time.time()
+for lisi in np.arange(1,21,1):
     l = 0
-    for uisi in np.arange(1,13,1):
+    for uisi in np.arange(1,21,1):
         if lisi > uisi:
             l+=1
             continue
-        d = design.expdesign(lisi, uisi, 0.1, 100, [2], lv, 1, noise = True,nonlinear = True,load = 'wmmap')
+        if paradigm:
+            arg_map = paradigm + 'map'
+        else:
+            arg_map = None
+        d = design.expdesign(lisi, uisi, 0.1, 100, [2], lv, cue_ratio, 
+                             noise = True,nonlinear = True,load = arg_map)
         data = d.tcourse()
         e = design.expanalyse(data, np.array([1, 0]), expdesign = d)
         p1[k,l] = e.calc_Fd()
         p2[k,l] = e.calc_Fe(ncond =2)
-        temp = e.roi/np.mean(e.roi)*100-100
-        a1[k,l] = trapz(temp,dx =1)
+        
         
         l += 1
     k += 1
     print(lisi)
-
-        
+print(f'Time: {time.time() - start}')
+'''
+if maxp1 < np.max(p1):
+    maxp1 = np.max(p1)
+    
+if maxp2 < np.max(p2):
+    maxp2 = np.max(p2)'''
 #%%
-from tools import plotfs
-fig = plotfs.plotdata(p1,p2,200,70,normalize = True)
-fig.savefig("Figures/Doubletrial/dt_det_heff_trans_nonlin_0.1.png",dpi = 600,bbox_inches = 'tight')
+
+fig1,fig2 = plotfs.plotdata(p1,p2,40,0.40,normalize = False)
+fig1.savefig("Figures/Doubletrial/Final/dt_det_trans_nonlin_" + str(cue_ratio) + "_" + paradigm + '.png' , dpi = 600,bbox_inches = 'tight')
+fig2.savefig("Figures/Doubletrial/Final/dt_heff_trans_nonlin_" + str(cue_ratio) + "_" + '.png',dpi = 600,bbox_inches = 'tight')
 #plotdata.plotdata(c1,c3,4500,4500)
 #%%
 from numpy.fft import fft
@@ -72,6 +85,6 @@ labels = np.round(p[0],2).astype(str)
 plt.xticks(np.arange(30),labels)
 #%%
 plt.figure()
-plt.plot(d.temp)
+plt.plot(d.temp) 
         
         

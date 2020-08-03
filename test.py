@@ -45,7 +45,9 @@ for count in range(0,10):
                 continue
             lower_isi = lisi
             upper_isi = y
-            d = design.expdesign(ratio, lisi, y, 0.1, 100, [2], lv)
+            d = design.expdesign(ratio, 1,lisi, y, 0.1, 100, [2], lv,noise = True,
+                                 nonlinear = True,
+                                 load = 'wmmap')
             data = d.tcourse()
             e = design.expanalyse(data, np.array([1, 0]), expdesign = d)
             c1[k,l] = e.calc_Fd()
@@ -66,24 +68,23 @@ avgc1.shape
 #%%
 fig= plt.figure(figsize = (12,8))
 ax = fig.add_subplot(111)
-plt.plot(avgc1[0],'-D',label = '0',c = 'red')
-plt.plot(avgc1[1],'-o',label = '0.1',c = 'black')
-plt.plot(avgc1[2],'-o',label = '0.2',c = 'orange')
-plt.plot(avgc1[3],'-x',label = '0.3',c = 'lime')   
-plt.plot(avgc1[4],'-h',label = '0.4',c = 'violet')
-plt.plot(avgc1[5],'-*',label = '0.5',c = 'blue')
-l = plt.legend(loc = 1,title = 'Proportion of \n semi-null trials')
+plt.plot(avgc2[0],'-D',label = '0',c = 'b')
+plt.plot(avgc2[1],'-o',label = '10%',c = 'g')
+plt.plot(avgc2[2],'-^',label = '20%',c = 'r')
+plt.plot(avgc2[3],'-x',label = '30%',c = 'c')   
+plt.plot(avgc2[4],'-s',label = '40%',c = 'm')
+plt.plot(avgc2[5],'-*',label = '50%',c = 'y')
+l = plt.legend(loc = 4,title = 'Proportion of \n partial trials')
 plt.setp(l.get_title(), multialignment='center')
-#ax.set_xlabel('Upper Bound of SOA')
-ax.set_ylabel('Detection Power',size = 15)
-ax.set_xlabel('Upper Bound of SOA',size = 15)
-#ax.set_ylabel('HRF Estimation Eff.')
-#ax.set_title('HRF Estimation Eff. for Different Cue Only Trial Proportions(lsoa = 4)')
-ax.set_title('Detection Power for Semi - Null Trial Proportions (lSOA = 2)',size = 15)
+#ax.set_ylabel('Detection Power',size = 15)
+ax.set_xlabel('Upper Bound of ISI',size = 15)
+ax.set_ylabel('Estimation Eff.',size = 15)
+ax.set_title('Estimation Eff. for Partial - Trial Proportions')
+#ax.set_title('Detection Power for Partial - Trial Proportions',size = 15)
 labels = uisi.astype(str)
 labels[0] = '2s Const.'
 plt.xticks(np.arange(0,len(uisi),1), labels,size = 15)
 plt.yticks(size = 15)
 #plt.scatter(avgc1[0],avgc2[0])
-fig.savefig("/Users/soukhind/deconv/deconv/Figures/Nullevents/N1.png",bbox_inches = "tight",dpi = 600)
+#fig.savefig("Figures/Nullevents/N2.png",bbox_inches = "tight",dpi = 600)
         

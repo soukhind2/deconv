@@ -15,7 +15,9 @@ from scipy.linalg import toeplitz
 
 class expdesign:
     
-    def __init__(self,cue_ratio,l,u,edur,tevents,signal_mag,loadvolume):
+    def __init__(self,null_ratio,cue_ratio,l,u,edur,tevents,signal_mag,
+                 loadvolume,noise = False,nonlinear = True,load = None):
+        
         self.lower_isi = l
         self.upper_isi = u
         self.total_events = tevents
@@ -28,11 +30,86 @@ class expdesign:
         self.event_duration = edur  # How long is each event
         self.loadvolume = loadvolume
         self.signal_magnitude = signal_mag
+        self.noise = noise
+        self.nonlin = nonlinear
+        self.load = load
+        self.nullr = null_ratio
     
+    
+    def transient(self,etrain,etrain2,l,u):
+        '''
+        
+        Parameters
+        ----------
+        def transient : ndarray
+        etrain = default weighted stimfunction array
+        l = lower bound of isi
+        u = upper bound of isi
+        self.load = type of transient activity
+            'attnmap'- uses the default attention maintenance map for determining
+            the amount of maintenance
+            'wmmap'- uses the default WM maintenance map for determining
+            the amount of maintenance
+            'wmflat'- special case when neurons fire at an uniform and even rate
+            between two events  namely cue and target
+        Returns: 
+        Modified height adjusted stimweight array of target with transient properties
+        -------
+        None.
+        '''
+        tr = int(self.temporal_res)
+        for i in np.arange(0,len(etrain)):
+            if etrain[i] == 1:
+                if self.load == 'attnmap':
+                    
+                    if l <= 7 and u <= 9:
+                        etrain[ i + 1 : i + 1 + tr * 1 ] = 0.66                    
+                    elif ((l <= 7 and u >= 10 and u <= 13) or (l <= 5 and u >= 14)
+                          or (l == 8 and u >= 8 and u <= 9)
+                          or (l == 9 and u == 9)):
+                        etrain[ i + 1 : i + 1 + tr * 4 ] = 0.66                    
+                        
+                    elif (((l == 6 or l == 7) and u >= 14 and u <= 20) 
+                          or ((l >=8 and l <= 10) and u >= 10 and u <= 13)
+                          or ((l >= 10 and l <= 13) and u >= 11 and u <= 13)):
+                        etrain[ i + 1 + tr*int(l/2)  : i + 1 + tr*int(l/2) + tr*1 ] = 0.66                    
+        
+                        
+                    elif (((l == 8 or l == 9) and u >= 14 and u <= 20) 
+                        or ((l == 10 or l == 11) and u >= 14 and u <= 20)
+                        or ((l >= 12 and l <= 14) and u >= 14 and u <= 20)
+                        or ((l == 14 or l == 15) and u >= 15 and u <= 20)
+                        or (l >= 16 and u >= 15 and u <= 20)):
+                        etrain[ i + 1 + tr*int(l/2)  : i + 1 + tr*int(l/2) + tr*4 ] = 0.66
+                        
+                elif self.load == 'wmmap':
+                    idxA = np.where(etrain == 1)[0][:]
+                    idxB = np.where(etrain2 == 1)[0][:]
+                    minl = min(len(idxA),len(idxB))
+                    for i in range(minl):
+                        if idxA[i] > idxB[i]:
+                            idxB[i] = 0  #This is used to treat for any error 
+                            # sampling, or when the two events are not alternate
+                    
+                    if ((l <= 9 and u <= 13) or (l <= 5)):
+                        for i in range(minl):
+                            if idxB[i]!= 0:
+                                etrain2[ idxA[i] + 1 : idxB[i] ] = 0.66
+                                
+                    else:
+                        for i in range(minl):
+                            if idxB[i]!= 0:
+                                etrain2[ idxA[i] + 1 + tr*int(l/2) : idxB[i] ] = 0.66 
+                
+                else:
+                    raise ValueError('Invalid transient map arguement')
 
+        return etrain2
+    
+    
     def tcourse(self):
-        pattern_A = np.ones((27,1))
-        pattern_B = 1 * np.ones((27,1))
+        pattern_A = self.cue_r * np.ones((27,1))
+        pattern_B = np.ones((27,1))
         time = self.burn_in
         f = 0 # Variable to iter between two conditions 
         nevents = 0
@@ -60,7 +137,7 @@ class expdesign:
         self.onsets_A = self.onsets_A.transpose()
         self.onsets_B = self.onsets_B.transpose()
         self.onsets_B = np.sort(np.random.choice(self.onsets_B,
-                                                 int(len(self.onsets_B)*self.cue_r)
+                                                 int(len(self.onsets_B)*self.nullr)
                                                  ,replace = False))
         stimfunc_A = np.empty((0,1))
         stimfunc_B = np.empty((0,1))
@@ -79,22 +156,34 @@ class expdesign:
                                                    )
         
 
+        #Transient activity introduced
+        stimfunc_B1 = stimfunc_B
+        if self.load:
+            stimfunc_B1 = self.transient(stimfunc_A,stimfunc_B1,self.lower_isi,self.upper_isi)
+
+
         # Multiply each pattern by each voxel time course
         weights_A = np.empty((0,1))
         weights_B = np.empty((0,1))
+        weights_B1 = np.empty((0,1))
 
         weights_A = np.matlib.repmat(stimfunc_A, 1, self.loadvolume.voxels).transpose() * pattern_A
         weights_B = np.matlib.repmat(stimfunc_B, 1, self.loadvolume.voxels).transpose() * pattern_B
+        weights_B1 = np.matlib.repmat(stimfunc_B1, 1, self.loadvolume.voxels).transpose() * pattern_B
 
+
+        
         # Sum these time courses together
         stimfunc_weighted = np.empty((0,1))
-        stimfunc_weighted = weights_A + weights_B
+
+        stimfunc_weighted = weights_B1 + weights_A
         stimfunc_weighted = stimfunc_weighted.transpose()
+        self.temp = stimfunc_weighted
         
         signal_func = fmrisim.convolve_hrf(stimfunction=stimfunc_weighted,
                                            tr_duration=self.loadvolume.tr,
                                            temporal_resolution=self.temporal_res,
-                                           scale_function=1)
+                                           scale_function=0, nonlin = self.nonlin)
         
         # Specify the parameters for signal
         signal_method = 'PSC'
@@ -116,7 +205,11 @@ class expdesign:
 
         signal = fmrisim.apply_signal(signal_func_scaled,self.loadvolume.signal_volume,)
 
-        self.brain = signal + self.loadvolume.noise
+        if self.noise:
+            
+            self.brain = signal + self.loadvolume.noise
+        else:
+            self.brain = signal
         
         return self.brain
     

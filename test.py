@@ -33,11 +33,11 @@ p2 = np.zeros((20,20))
 
 k = 0
 paradigm = 'attn'
-cue_ratio = 0.9
+cue_ratio = 1
 start = time.time()
-for lisi in np.arange(1,21,1):
+for lisi in np.arange(1,2,1):
     l = 0
-    for uisi in np.arange(1,21,1):
+    for uisi in np.arange(1,8,1):
         if lisi > uisi:
             l+=1
             continue
@@ -46,7 +46,7 @@ for lisi in np.arange(1,21,1):
         else:
             arg_map = None
         d = design.expdesign(lisi, uisi, 0.1, 100, [2], lv, cue_ratio, 
-                             noise = True,nonlinear = True,load = arg_map)
+                             noise = False,nonlinear = True,load = arg_map)
         data = d.tcourse()
         e = design.expanalyse(data, np.array([1, 0]), expdesign = d)
         p1[k,l] = e.calc_Fd()
@@ -57,17 +57,18 @@ for lisi in np.arange(1,21,1):
     k += 1
     print(lisi)
 print(f'Time: {time.time() - start}')
-'''
-if maxp1 < np.max(p1):
-    maxp1 = np.max(p1)
-    
-if maxp2 < np.max(p2):
-    maxp2 = np.max(p2)'''
+#x1 = .1
+#x2 = .3
+#x3 = .5
+#x4 = .7
+#x5 = .9
+
+
 #%%
 
-fig1,fig2 = plotfs.plotdata(p1,p2,40,0.40,normalize = False)
-fig1.savefig("Figures/Doubletrial/Final/dt_det_trans_nonlin_" + str(cue_ratio) + "_" + paradigm + '.png' , dpi = 600,bbox_inches = 'tight')
-fig2.savefig("Figures/Doubletrial/Final/dt_heff_trans_nonlin_" + str(cue_ratio) + "_" + '.png',dpi = 600,bbox_inches = 'tight')
+fig1,fig2 = plotfs.plotdata(x3,x5,40,40,normalize = False)
+#fig1.savefig("Figures/Doubletrial/Final/dt_det_trans_nonlin_" + str(cue_ratio) + "_" + paradigm + '.png' , dpi = 600,bbox_inches = 'tight')
+#fig2.savefig("Figures/Doubletrial/Final/dt_heff_trans_nonlin_" + str(cue_ratio) + "_" + '.png',dpi = 600,bbox_inches = 'tight')
 #plotdata.plotdata(c1,c3,4500,4500)
 #%%
 from numpy.fft import fft

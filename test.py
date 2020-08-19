@@ -32,41 +32,50 @@ p2 = np.zeros((20,20))
 
 
 k = 0
-paradigm = 'attn'
+paradigm = ''
 cue_ratio = 1
 start = time.time()
-for lisi in np.arange(1,2,1):
+for lisi in np.arange(1,20,1):
     l = 0
-    for uisi in np.arange(1,8,1):
+    for uisi in np.arange(1,20,1):
         if lisi > uisi:
-            l+=1
+            l += 1
             continue
         if paradigm:
             arg_map = paradigm + 'map'
         else:
             arg_map = None
+            
         d = design.expdesign(lisi, uisi, 0.1, 100, [2], lv, cue_ratio, 
                              noise = False,nonlinear = True,load = arg_map)
         data = d.tcourse()
         e = design.expanalyse(data, np.array([1, 0]), expdesign = d)
         p1[k,l] = e.calc_Fd()
         p2[k,l] = e.calc_Fe(ncond =2)
-        
+        if lisi == 2 and uisi == 3:
+            e1 = e.roi
+            t1 = e.design[:,0] + e.design[:,1]
+        if lisi == 5 and uisi == 9:
+            e2 = e.roi
+            t2 = e.design[:,0] + e.design[:,1]
+        if lisi == 2 and uisi == 19:
+            e3 = e.roi
+            t3 = e.design[:,0] + e.design[:,1]
+        if lisi == 18 and uisi == 19:
+            e4 = e.roi
+            t4 = e.design[:,0] + e.design[:,1]
+
         
         l += 1
     k += 1
     print(lisi)
 print(f'Time: {time.time() - start}')
-#x1 = .1
-#x2 = .3
-#x3 = .5
-#x4 = .7
-#x5 = .9
+
 
 
 #%%
 
-fig1,fig2 = plotfs.plotdata(x3,x5,40,40,normalize = False)
+fig1,fig2 = plotfs.plotdata(p1,p2,40,40,normalize = True)
 #fig1.savefig("Figures/Doubletrial/Final/dt_det_trans_nonlin_" + str(cue_ratio) + "_" + paradigm + '.png' , dpi = 600,bbox_inches = 'tight')
 #fig2.savefig("Figures/Doubletrial/Final/dt_heff_trans_nonlin_" + str(cue_ratio) + "_" + '.png',dpi = 600,bbox_inches = 'tight')
 #plotdata.plotdata(c1,c3,4500,4500)

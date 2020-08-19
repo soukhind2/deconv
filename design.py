@@ -19,7 +19,7 @@ class expdesign:
         self.lower_isi = l
         self.upper_isi = u
         self.total_events = tevents
-        self.burn_in = 1
+        self.burn_in = 5
         self.onsets_A = np.empty((0,1))
         self.onsets_B = np.empty((0,1))
         self.onsets_all = np.empty((0,1))
@@ -198,6 +198,7 @@ class expdesign:
                                            tr_duration=self.loadvolume.tr,
                                            temporal_resolution=self.temporal_res,
                                            scale_function=0,nonlin = self.nonlin)
+
         # Specify the parameters for signal
         signal_method = 'PSC'
 

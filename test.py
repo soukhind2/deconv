@@ -9,7 +9,7 @@ Created on Thu Apr 16 23:38:21 2020
 import loadvolume
 from tools import plotfs
 import time
-lv = loadvolume.loadvolume('Participant_03_rest_run02.nii')
+lv = loadvolume.loadvolume('Participant_03_rest_run01.nii')
 
 lv.loaddata()
 lv.loadmask()

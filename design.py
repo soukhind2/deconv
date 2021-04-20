@@ -15,7 +15,15 @@ from scipy.linalg import toeplitz
 
 class expdesign:
     
-    def __init__(self,l,u,edur,tevents,signal_mag,loadvolume,cue_ratio = None, noise = False,nonlinear = True, load = None):
+    def __init__(self,l,u,edur,tevents,
+                 signal_mag,loadvolume,
+                 distribution,
+                 exp,
+                 cue_ratio = None, 
+                 noise = False,
+                 nonlinear = True, 
+                 load = None):
+        
         self.lower_isi = l
         self.upper_isi = u
         self.total_events = tevents
@@ -31,6 +39,8 @@ class expdesign:
         self.noise = noise
         self.nonlin = nonlinear
         self.load = load
+        self.distribution = distribution
+        self.exp = exp
 
     
     def transient(self,etrain,etrain2,l,u):
@@ -110,6 +120,12 @@ class expdesign:
         time = self.burn_in
         f = 0 # Variable to switch between two conditions 
         nevents = 0
+        if self.distribution == 'exp':
+            a = np.arange(self.lower_isi,self.upper_isi,0.1)
+            ai = np.arange(a.size)        # an array of the index value for weighting
+            w = np.exp(ai/self.exp)            # higher weights for larger index values
+            w /= w.sum()                 # weight must be normalized
+            
         total_time = int(self.loadvolume.dim[3] * self.loadvolume.tr) + self.burn_in  # How long is the total event time course
         while time <= (total_time - 5) :
         #while nevents <= self.total_events:
@@ -132,15 +148,28 @@ class expdesign:
                 if f == 0:
                     self.onsets_A = np.append(self.onsets_A, time)
                     self.onsets_all = np.append(self.onsets_all,time)
-                    time = time + self.event_duration + np.random.uniform(self.lower_isi, 
+                    if self.distribution == 'uniform':
+                        time = time + self.event_duration + np.random.uniform(self.lower_isi, 
                                                                      self.upper_isi)
+                    elif self.distribution =='exp':
+                        time = time + self.event_duration + np.random.choice(a, size=1, p=w)
+                    
+                    else:
+                        raise ValueError('Invalid distribution')
                     f = 1
                     nevents = nevents + 1
+                    
                 else:
                     self.onsets_B = np.append(self.onsets_B, time)
                     self.onsets_all = np.append(self.onsets_all,time)
-                    time = time + self.event_duration + np.random.uniform(self.lower_isi, 
-                                                                     self.upper_isi)
+                    if self.distribution == 'uniform':
+                       time = time + self.event_duration + np.random.uniform(self.lower_isi, 
+                                                                    self.upper_isi)
+                    elif self.distribution =='exp':
+                       time = time + self.event_duration + np.random.choice(a, size=1, p=w)
+                   
+                    else:
+                        raise ValueError('Invalid distribution')
                     f = 0
                     nevents = nevents + 1
 

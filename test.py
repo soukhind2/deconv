@@ -9,7 +9,7 @@ Created on Thu Apr 16 23:38:21 2020
 import loadvolume
 from tools import plotfs
 import time
-lv = loadvolume.loadvolume('Participant_03_rest_run01.nii')
+lv = loadvolume.loadvolume('Participant_03_rest_run02.nii')
 
 lv.loaddata()
 lv.loadmask()
@@ -34,10 +34,12 @@ p2 = np.zeros((20,20))
 k = 0
 paradigm = ''
 cue_ratio = 1
+dist = 'exp'
 start = time.time()
-for lisi in np.arange(1,20,1):
+store = 0
+for lisi in np.arange(1,21,1):
     l = 0
-    for uisi in np.arange(1,20,1):
+    for uisi in np.arange(1,21,1):
         if lisi > uisi:
             l += 1
             continue
@@ -46,24 +48,26 @@ for lisi in np.arange(1,20,1):
         else:
             arg_map = None
             
-        d = design.expdesign(lisi, uisi, 0.1, 100, [2], lv, cue_ratio, 
-                             noise = False,nonlinear = True,load = arg_map)
+        d = design.expdesign(lisi, uisi, 0.1, 100, [2], lv, dist,30,
+                             cue_ratio,noise = False,nonlinear = True,load = arg_map)
+                
         data = d.tcourse()
         e = design.expanalyse(data, np.array([1, 0]), expdesign = d)
         p1[k,l] = e.calc_Fd()
         p2[k,l] = e.calc_Fe(ncond =2)
-        if lisi == 2 and uisi == 3:
-            e1 = e.roi
-            t1 = e.design[:,0] + e.design[:,1]
-        if lisi == 5 and uisi == 9:
-            e2 = e.roi
-            t2 = e.design[:,0] + e.design[:,1]
-        if lisi == 2 and uisi == 19:
-            e3 = e.roi
-            t3 = e.design[:,0] + e.design[:,1]
-        if lisi == 18 and uisi == 19:
-            e4 = e.roi
-            t4 = e.design[:,0] + e.design[:,1]
+        if store:
+            if lisi == 2 and uisi == 3:
+                e1 = e.roi
+                t1 = e.design[:,0] + e.design[:,1]
+            if lisi == 5 and uisi == 9:
+                e2 = e.roi
+                t2 = e.design[:,0] + e.design[:,1]
+            if lisi == 2 and uisi == 19:
+                e3 = e.roi
+                t3 = e.design[:,0] + e.design[:,1]
+            if lisi == 18 and uisi == 19:
+                e4 = e.roi
+                t4 = e.design[:,0] + e.design[:,1]
 
         
         l += 1

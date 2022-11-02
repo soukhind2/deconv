@@ -9,7 +9,7 @@ Created on Thu Apr 16 23:38:21 2020
 import loadvolume
 from tools import plotfs
 import time
-lv = loadvolume.loadvolume('Participant_03_rest_run02.nii')
+lv = loadvolume.loadvolume('/Users/soukhind/Desktop/FMRIsim/Full_Data/Corr_MVPA_Data_dataspace/Participant_03_rest_run01.nii')
 
 lv.loaddata()
 lv.loadmask()
@@ -34,9 +34,9 @@ p2 = np.zeros((20,20))
 k = 0
 paradigm = ''
 cue_ratio = 1
-dist = 'exp'
+dist = 'uniform'
 start = time.time()
-store = 0
+store = 1
 for lisi in np.arange(1,21,1):
     l = 0
     for uisi in np.arange(1,21,1):
@@ -68,8 +68,10 @@ for lisi in np.arange(1,21,1):
             if lisi == 18 and uisi == 19:
                 e4 = e.roi
                 t4 = e.design[:,0] + e.design[:,1]
+            if lisi == 2 and uisi == 10:
+                e5 = e.roi
+                t5 = e.design[:,0] + e.design[:,1]
 
-        
         l += 1
     k += 1
     print(lisi)
@@ -77,7 +79,7 @@ print(f'Time: {time.time() - start}')
 
 
 
-#%%
+ #%%
 
 fig1,fig2 = plotfs.plotdata(p1,p2,40,40,normalize = True)
 #fig1.savefig("Figures/Doubletrial/Final/dt_det_trans_nonlin_" + str(cue_ratio) + "_" + paradigm + '.png' , dpi = 600,bbox_inches = 'tight')

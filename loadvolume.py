@@ -5,7 +5,7 @@ Created on Tue Apr 14 18:22:01 2020
 
 @author: sdas
 """
-from brainiak.utils import fmrisim
+import fmrisim_modified as fmrisim
 import nibabel
 import numpy as np
 import matplotlib.pyplot as plt

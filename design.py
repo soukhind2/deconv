@@ -7,7 +7,7 @@ Created on Wed Apr 15 14:16:41 2020
 """
 
 import numpy as np
-from brainiak.utils import fmrisim
+import fmrisim_modified as fmrisim
 from tools._dghrf import _dghrf
 import statsmodels.api as sm
 from scipy.linalg import toeplitz
@@ -126,7 +126,7 @@ class expdesign:
             w = np.exp(ai/self.exp)            # higher weights for larger index values
             w /= w.sum()                 # weight must be normalized
             
-        total_time = int(self.loadvolume.dim[3] * self.loadvolume.tr) + self.burn_in  # How long is the total event time course
+        total_time = int(self.loadvolume.dim[3] * self.loadvolume.tr)   # How long is the total event time course
         while time <= (total_time - 5) :
         #while nevents <= self.total_events:
             if self.lower_isi == self.upper_isi:
@@ -241,13 +241,14 @@ class expdesign:
 
         # Compute the signal appropriate scaled
         signal_func_scaled = fmrisim.compute_signal_change(signal_func,
-                                                           noise_func,
+                                                           noise_func.T,
                                                            self.loadvolume.noise_dict,
                                                            magnitude=self.signal_magnitude,
                                                            method=signal_method,)
-
+        
         signal = fmrisim.apply_signal(signal_func_scaled,self.loadvolume.signal_volume,)
-
+        signal = signal[:,:,:,:-3]
+        self.temp = signal
         if self.noise:
             
             self.brain = signal + self.loadvolume.noise
@@ -255,6 +256,7 @@ class expdesign:
             self.brain = signal
         
         return self.brain
+
     
 class expanalyse:
      

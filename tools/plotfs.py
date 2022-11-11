@@ -17,7 +17,7 @@ def plotdata(data1,data2,max1 ,max2 ,title1 = "Detection Power",
         max2 = 1
     fig1= plt.figure(figsize = (5,5))
     ax = fig1.add_subplot(111)
-    im = ax.imshow(data1,vmin = 0, vmax = max1,cmap = 'jet')
+    im = ax.imshow(data1,vmin = 0, vmax = max1,cmap = 'viridis')
     ax.invert_yaxis()
     ax.set_xlabel("Upper Bound of ISI",size = 12)
     ax.set_ylabel("Lower Bound of ISI",size = 12)
@@ -30,7 +30,7 @@ def plotdata(data1,data2,max1 ,max2 ,title1 = "Detection Power",
     fig2= plt.figure(figsize = (5,5))
 
     ax = fig2.add_subplot(111)
-    im2 = ax.imshow(data2,vmin = 0, vmax = max2,cmap = 'jet')
+    im2 = ax.imshow(data2,vmin = 0, vmax = max2,cmap = 'viridis')
     ax.invert_yaxis()
     ax.set_xlabel("Upper Bound of ISI",size = 12)
     ax.set_ylabel("Lower Bound of ISI",size = 12)

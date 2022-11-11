@@ -127,7 +127,7 @@ class expdesign:
             w /= w.sum()                 # weight must be normalized
             
         total_time = int(self.loadvolume.dim[3] * self.loadvolume.tr)   # How long is the total event time course
-        while time <= (total_time - 5) :
+        while time <= (total_time ) :
         #while nevents <= self.total_events:
             if self.lower_isi == self.upper_isi:
                 
@@ -247,7 +247,6 @@ class expdesign:
                                                            method=signal_method,)
         
         signal = fmrisim.apply_signal(signal_func_scaled,self.loadvolume.signal_volume,)
-        signal = signal[:,:,:,:-3]
         self.temp = signal
         if self.noise:
             

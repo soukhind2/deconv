@@ -8,16 +8,20 @@ Created on Tue Apr 14 15:55:51 2020
 
 import matplotlib.pyplot as plt
 import numpy as np
-def plotdata(data1,data2,max1 ,max2 ,title1 = "Detection Power",
-             title2 = "Estimation Efficiency",normalize = False):
+def plotdata(data1,data2,normalize = False,title1 = "Detection Power",
+             title2 = "Estimation Efficiency"):
     if normalize:
         data1 = data1/np.amax(data1)
         data2 = data2/np.amax(data2)
         max1 = 1
         max2 = 1
+    else:
+        max1 = np.amax(data1)
+        max2 = np.amax(data2)
+        
     fig1= plt.figure(figsize = (5,5))
     ax = fig1.add_subplot(111)
-    im = ax.imshow(data1,vmin = 0, vmax = max1,cmap = 'jet')
+    im = ax.imshow(data1,vmin = 0, vmax = max1,cmap = 'viridis')
     ax.invert_yaxis()
     ax.set_xlabel("Upper Bound of ISI",size = 12)
     ax.set_ylabel("Lower Bound of ISI",size = 12)
@@ -30,7 +34,7 @@ def plotdata(data1,data2,max1 ,max2 ,title1 = "Detection Power",
     fig2= plt.figure(figsize = (5,5))
 
     ax = fig2.add_subplot(111)
-    im2 = ax.imshow(data2,vmin = 0, vmax = max2,cmap = 'jet')
+    im2 = ax.imshow(data2,vmin = 0, vmax = max2,cmap = 'viridis')
     ax.invert_yaxis()
     ax.set_xlabel("Upper Bound of ISI",size = 12)
     ax.set_ylabel("Lower Bound of ISI",size = 12)
@@ -40,7 +44,12 @@ def plotdata(data1,data2,max1 ,max2 ,title1 = "Detection Power",
     plt.yticks(np.arange(0,len(data2),2), labels)
     return fig1,fig2
 
-def avgHRF(onsets,brain,tr):
+def avgHRF(w,onsets,brain,tr):
+    #w = A or B?
+    #before = 2
+    #after = 10
+    
+    
     res = 20
     out = np.zeros((len(onsets),res))
     for i in range(0,len(onsets)):
@@ -52,3 +61,7 @@ def avgHRF(onsets,brain,tr):
             out[i,:] = brain[series_A]
         
     return out
+
+#out.shape = [10,14]
+#d = mean(out,0)
+#'Average timecourse epoch for event: B"

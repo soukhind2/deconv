@@ -346,6 +346,7 @@ class expanalyse:
         out = 1/np.matrix.trace(o)
         return out
     
+    
 
         
          

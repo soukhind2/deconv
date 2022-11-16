@@ -11,7 +11,8 @@ import fmrisim_modified as fmrisim
 from tools._dghrf import _dghrf
 import statsmodels.api as sm
 from scipy.linalg import toeplitz
-
+import importlib
+importlib.reload(fmrisim)
 
 class expdesign:
     
@@ -175,7 +176,7 @@ class expdesign:
         
         
 
-    def tcourse(self):
+    def tcourse(self,hrf_type = 'double_gamma',params = None):
         pattern_A = self.cue_r * np.ones((27,1))
         pattern_B = np.ones((27,1))
         time = self.burn_in
@@ -266,10 +267,10 @@ class expdesign:
         stimfunc_weighted = weights_B1 + weights_A
         stimfunc_weighted = stimfunc_weighted.transpose()
         self.temp = stimfunc_weighted
-
+        
 
         signal_func = fmrisim.convolve_hrf(stimfunction=stimfunc_weighted,
-                                           tr_duration=self.loadvolume.tr,
+                                           tr_duration=self.loadvolume.tr,hrf_type = hrf_type,params = params,
                                            temporal_resolution=self.temporal_res,
                                            scale_function=0,nonlin = self.nonlin)
 

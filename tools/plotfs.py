@@ -9,12 +9,8 @@ Created on Tue Apr 14 15:55:51 2020
 import matplotlib.pyplot as plt
 import numpy as np
 def plotdata(data1,data2,max1 ,max2 ,title1 = "Detection Power",
-             title2 = "Estimation Efficiency",normalize = False):
-    if normalize:
-        data1 = data1/np.amax(data1)
-        data2 = data2/np.amax(data2)
-        max1 = 1
-        max2 = 1
+             title2 = "Estimation Efficiency"):
+
     fig1= plt.figure(figsize = (5,5))
     ax = fig1.add_subplot(111)
     im = ax.imshow(data1,vmin = 0, vmax = max1,cmap = 'viridis')
@@ -30,7 +26,7 @@ def plotdata(data1,data2,max1 ,max2 ,title1 = "Detection Power",
     fig2= plt.figure(figsize = (5,5))
 
     ax = fig2.add_subplot(111)
-    im2 = ax.imshow(data2,vmin = 0, vmax = max2,cmap = 'viridis')
+    im2 = ax.imshow(data2,vmin = 0,vmax = max2,cmap = 'viridis')
     ax.invert_yaxis()
     ax.set_xlabel("Upper Bound of ISI",size = 12)
     ax.set_ylabel("Lower Bound of ISI",size = 12)
@@ -52,3 +48,14 @@ def avgHRF(onsets,brain,tr):
             out[i,:] = brain[series_A]
         
     return out
+
+def plotjitterdist(w):
+    
+    fig1 = plt.figure(figsize = (5,5))
+    ax = plt.plot(w)
+    plt.yticks([0,max(w)],['0','1'])
+    plt.ylim([0,max(w)*1.4])
+    plt.xticks([0,len(w)],['Lower ISI','Upper ISI'])
+    plt.xlabel('ISI')
+    plt.ylabel('Probability Distribution')
+    

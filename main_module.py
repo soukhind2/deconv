@@ -22,13 +22,14 @@ parameters = {
 def run_experiment(max_lisi, max_uisi, lv, parameters):
     p1 = np.zeros((max_lisi, max_uisi))
     p2 = np.zeros((max_lisi, max_uisi))
-    result = []
+    result = {}
 
     k = 0
     start = time.time()
+    d = design.expdesign(parameters["event_duration"], parameters["tevents"], parameters["signal_mag"], lv, parameters["distribution"], parameters["exp"], parameters["cue_ratio"], noise = parameters["noise"], nonlinear = parameters["nonlinear"], load = arg_map)
     # store = 1
     for lisi in np.arange(1, max_lisi + 1, 1):
-        result = [ *result, [] ]
+        result[str(lisi)] = {}
         l = 0
         for uisi in np.arange(1, max_uisi + 1, 1):
             if lisi > uisi:
@@ -39,18 +40,19 @@ def run_experiment(max_lisi, max_uisi, lv, parameters):
             else:
                 arg_map = None
 
-            d = design.expdesign(lisi, uisi, parameters["event_duration"], parameters["tevents"], parameters["signal_mag"], lv, parameters["distribution"], parameters["exp"],
-                                 parameters["cue_ratio"], noise = parameters["noise"], nonlinear = parameters["nonlinear"], load = arg_map)
+            #d = design.expdesign(lisi, uisi, parameters["event_duration"], parameters["tevents"], parameters["signal_mag"], lv, parameters["distribution"], parameters["exp"], parameters["cue_ratio"], noise = parameters["noise"], nonlinear = parameters["nonlinear"], load = arg_map)
 
-            data = d.tcourse()
+            data = d.tcourse(lisi,uisi)
             e = design.expanalyse(data, np.array([1, 0]), expdesign = d)
             p1[k,l] = e.calc_Fd()
             p2[k,l] = e.calc_Fe(ncond =2)
 
-            result[lisi - 1] = [ *result[lisi - 1], {
+            result[str(lisi)][str(uisi)] = {
                 "e": e.roi,
-                "t": e.design[:,0] + e.design[:,1]
-            } ]
+                "t": e.design[:,0] + e.design[:,1],
+                "t1": e.design[:,0],
+                "t2": e.design[:,1]
+            }
 
             l += 1
         k += 1

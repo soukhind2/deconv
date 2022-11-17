@@ -9,6 +9,7 @@ import fmrisim_modified as fmrisim
 import nibabel
 import numpy as np
 import matplotlib.pyplot as plt
+import json
 
 
 class loadvolume:
@@ -28,6 +29,24 @@ class loadvolume:
     def loadmask(self):
         self.mask, self.template = fmrisim.mask_brain(volume=self.volume, 
                                     mask_self=True,)
+    
+    def generate_noise_with_custom_dict(self, custom_dict_path):
+        
+        with open(custom_dict_path) as file:
+            data = file.read()
+
+        noise_dict = json.loads(data)
+        self.noise_dict = noise_dict
+        
+        # Calculate the noise given the parameters
+        self.noise = fmrisim.generate_noise(dimensions=self.dim[0:3],
+                               tr_duration=int(self.tr),
+                               stimfunction_tr=[0] * self.dim[3], 
+                               mask=self.mask,
+                               template=self.template,
+                               noise_dict=self.noise_dict,
+                               )
+        
     def generate_noise(self):
         noise_dict = {'voxel_size': [self.dimsize[0], self.dimsize[1], 
                                      self.dimsize[2]], 'matched': 1}

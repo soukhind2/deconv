@@ -21,9 +21,11 @@ class expdesign:
                  distribution,
                  dist_param = None,
                  cue_ratio = None, 
+                 null_ratio = None,
                  noise = False,
                  nonlinear = True, 
-                 load = None):
+                 load = None,
+                ):
         
         self.lower_isi = l
         self.upper_isi = u
@@ -32,7 +34,8 @@ class expdesign:
         self.onsets_A = np.empty((0,1))
         self.onsets_B = np.empty((0,1))
         self.onsets_all = np.empty((0,1))
-        self.cue_r = cue_ratio
+        self.cue_ratio = cue_ratio # Value between 0-1
+        self.null_ratio = null_ratio
         self.temporal_res = 10.0 # How many timepoints per second of the stim function are to be generated?
         self.event_duration = edur  # How long is each event
         self.loadvolume = loadvolume
@@ -224,10 +227,12 @@ class expdesign:
 
         self.onsets_A = self.onsets_A.transpose()
         self.onsets_B = self.onsets_B.transpose()
-        '''if self.cue_r:
+        
+        if self.null_ratio:
             self.onsets_B = np.sort(np.random.choice(self.onsets_B,
-                                                     int(len(self.onsets_B)*self.cue_r)
-                                                     ,replace = False))'''
+                                                     int(len(self.onsets_B)*self.null_ratio)
+                                                     ,replace = False))
+            
         stimfunc_A = np.empty((0,1))
         stimfunc_B = np.empty((0,1))
 
@@ -390,6 +395,7 @@ class expanalyse:
         o = np.dot(np.dot(C,m),C.T)
         out = 1/np.matrix.trace(o)
         return out
+    
     
 
         

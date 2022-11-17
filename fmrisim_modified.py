@@ -799,6 +799,17 @@ def _double_gamma_hrf(response_delay=6,
 
     return hrf
 
+def _square_hrf(temporal_resolution):
+    hrf_length = 30  # How long is the HRF being created
+
+    # How many seconds of the HRF will you model?
+    hrf = [0] * int(hrf_length * temporal_resolution)
+    
+    for counter in list(range(int(12*temporal_resolution-1))): #turn off square function after 1/2 time
+        hrf[counter] = 1
+        
+    return hrf
+
 
 def linear(f,g):
     '''
@@ -871,7 +882,7 @@ def stim_convolve(a,b):
 
 def convolve_hrf(stimfunction,
                  tr_duration,
-                 hrf_type='double_gamma',
+                 hrf_type='double_gamma',params = None,
                  scale_function=True,
                  temporal_resolution=100.0,
                  nonlin = False
@@ -907,7 +918,8 @@ def convolve_hrf(stimfunction,
         Can instead take in a vector describing the HRF as it was
         specified by any function. The default is 'double_gamma' in which
         an initial rise and an undershoot are modelled.
-
+    params: dict
+        Takes in a dictonary of parameters for custom hrf
     scale_function : bool
         Do you want to scale the function to a range of 1
 
@@ -940,8 +952,16 @@ def convolve_hrf(stimfunction,
     # Generate the hrf to use in the convolution
     if hrf_type == 'double_gamma':
         hrf = _double_gamma_hrf(temporal_resolution=temporal_resolution)
-    elif isinstance(hrf_type, list):
-        hrf = hrf_type
+    elif hrf_type == 'custom':
+        hrf = _double_gamma_hrf(response_delay=params["response_delay"],
+                      undershoot_delay=params["undershoot_delay"],
+                      response_dispersion=params["response_dispersion"],
+                      undershoot_dispersion=params["undershoot_dispersion"],
+                      response_scale=params["response_scale"],
+                      undershoot_scale=params["undershoot_scale"],
+                      temporal_resolution=temporal_resolution)
+    elif hrf_type == 'square':
+        hrf = _square_hrf(temporal_resolution = temporal_resolution)
 
     # How many timecourses are there
     list_num = stimfunction.shape[1]

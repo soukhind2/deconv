@@ -11,14 +11,15 @@ import fmrisim_modified as fmrisim
 from tools._dghrf import _dghrf
 import statsmodels.api as sm
 from scipy.linalg import toeplitz
-
+import importlib
+importlib.reload(fmrisim)
 
 class expdesign:
     
     def __init__(self,l,u,edur,tevents,
                  signal_mag,loadvolume,
                  distribution,
-                 exp,
+                 dist_param = None,
                  cue_ratio = None, 
                  null_ratio = None,
                  noise = False,
@@ -43,7 +44,7 @@ class expdesign:
         self.nonlin = nonlinear
         self.load = load
         self.distribution = distribution
-        self.exp = exp
+        self.exp = dist_param
 
     
     def transient(self,etrain,etrain2,l,u):
@@ -68,21 +69,22 @@ class expdesign:
         None.
         '''
         tr = int(self.temporal_res)
+        sub_imp = 0.8
         for i in np.arange(0,len(etrain)):
             if etrain[i] == 1:
                 if self.load == 'attnmap':
                     
                     if l <= 7 and u <= 9:
-                        etrain[ i + 1 : i + 1 + tr * 1 ] = 0.66                    
+                        etrain[ i + 1 : i + 1 + tr * 1 ] = sub_imp                    
                     elif ((l <= 7 and u >= 10 and u <= 13) or (l <= 5 and u >= 14)
                           or (l == 8 and u >= 8 and u <= 9)
                           or (l == 9 and u == 9)):
-                        etrain[ i + 1 : i + 1 + tr * 4 ] = 0.66                    
+                        etrain[ i + 1 : i + 1 + tr * 4 ] = sub_imp                    
                         
                     elif (((l == 6 or l == 7) and u >= 14 and u <= 20) 
                           or ((l >=8 and l <= 10) and u >= 10 and u <= 13)
                           or ((l >= 10 and l <= 13) and u >= 11 and u <= 13)):
-                        etrain[ i + 1 + tr*int(l/2)  : i + 1 + tr*int(l/2) + tr*1 ] = 0.66                    
+                        etrain[ i + 1 + tr*int(l/2)  : i + 1 + tr*int(l/2) + tr*1 ] = sub_imp                    
         
                         
                     elif (((l == 8 or l == 9) and u >= 14 and u <= 20) 
@@ -90,8 +92,9 @@ class expdesign:
                         or ((l >= 12 and l <= 14) and u >= 14 and u <= 20)
                         or ((l == 14 or l == 15) and u >= 15 and u <= 20)
                         or (l >= 16 and u >= 15 and u <= 20)):
-                        etrain[ i + 1 + tr*int(l/2)  : i + 1 + tr*int(l/2) + tr*4 ] = 0.66
+                        etrain[ i + 1 + tr*int(l/2)  : i + 1 + tr*int(l/2) + tr*4 ] = sub_imp
                         
+                    return etrain
                 elif self.load == 'wmmap':
                     idxA = np.where(etrain == 1)[0][:]
                     idxB = np.where(etrain2 == 1)[0][:]
@@ -104,33 +107,88 @@ class expdesign:
                     if ((l <= 9 and u <= 13) or (l <= 5)):
                         for i in range(minl):
                             if idxB[i]!= 0:
-                                etrain2[ idxA[i] + 1 : idxB[i] ] = 0.66
+                                etrain2[ idxA[i] + 1 : idxB[i] ] = sub_imp
                                 
                     else:
                         for i in range(minl):
                             if idxB[i]!= 0:
-                                etrain2[ idxA[i] + 1 + tr*int(l/2) : idxB[i] ] = 0.66 
+                                etrain2[ idxA[i] + 1 + tr*int(l/2) : idxB[i] ] = sub_imp 
+                    
+                    return etrain2
+
                 
                 else:
                     raise ValueError('Invalid transient map arguement')
 
-        return etrain2
-    
+    def create_jitter(self):
+        
+        if self.distribution not in ['exp','uniform','stochastic_rapid','stochastic_interm','stochastic_slow']:
+            raise ValueError('Invalid Distribution')
+            
+        if self.lower_isi != self.upper_isi and self.distribution != 'uniform':
+            a = np.arange(self.lower_isi,self.upper_isi,0.1)
 
-    def tcourse(self):
+            if self.distribution == 'exp':
+                ai = np.arange(a.size)        # an array of the index value for weighting
+
+                if self.exp:
+                    w = np.exp(ai/self.exp)            # higher weights for larger index values
+                else:
+                    w = np.exp(ai/30)            # higher weights for larger index values
+
+
+            elif self.distribution == 'stochastic_rapid':
+                ai = np.arange(a.size)        # an array of the index value for weighting
+                if self.exp:
+                    w = np.cos(ai/self.exp)            # higher weights for larger index values
+                else:
+                    w = np.cos(ai/(a.size/50))  #50 is chosen for rapid cycles
+                w = w + + abs(min(w))
+
+
+            elif self.distribution == 'stochastic_interm':
+                ai = np.arange(a.size)        # an array of the index value for weighting
+                if self.exp:
+                    w = np.cos(ai/self.exp)            # higher weights for larger index values
+                else:
+                    w = np.cos(ai/(a.size/20))  #20 is chosen for interm cycles
+                w = w + + abs(min(w))
+
+            elif self.distribution == 'stochastic_slow':
+                ai = np.arange(a.size)        # an array of the index value for weighting
+                if self.exp:
+                    w = np.cos(ai/self.exp)            # higher weights for larger index values
+                else:
+                    w = np.cos(ai/(a.size/6))  #6 is chosen for one slow cycle
+                w = w + + abs(min(w))
+            
+            w /= w.sum()                 # weight must be normalized
+            
+            self.w = w
+            self.a = a
+            return w
+            
+        elif self.distribution == 'uniform' and self.lower_isi != self.upper_isi:
+            a = np.arange(self.lower_isi,self.upper_isi,0.1)
+            w = np.ones(a.size)
+            w/= w.sum()
+            self.w = w
+            self.a = a
+            
+            return w
+        
+        
+
+    def tcourse(self,hrf_type = 'double_gamma',params = None):
         pattern_A = self.cue_r * np.ones((27,1))
         pattern_B = np.ones((27,1))
         time = self.burn_in
         f = 0 # Variable to switch between two conditions 
         nevents = 0
-        if self.distribution == 'exp':
-            a = np.arange(self.lower_isi,self.upper_isi,0.1)
-            ai = np.arange(a.size)        # an array of the index value for weighting
-            w = np.exp(ai/self.exp)            # higher weights for larger index values
-            w /= w.sum()                 # weight must be normalized
+
             
         total_time = int(self.loadvolume.dim[3] * self.loadvolume.tr)   # How long is the total event time course
-        while time <= (total_time - 5) :
+        while time <= (total_time ) :
         #while nevents <= self.total_events:
             if self.lower_isi == self.upper_isi:
                 
@@ -151,28 +209,16 @@ class expdesign:
                 if f == 0:
                     self.onsets_A = np.append(self.onsets_A, time)
                     self.onsets_all = np.append(self.onsets_all,time)
-                    if self.distribution == 'uniform':
-                        time = time + self.event_duration + np.random.uniform(self.lower_isi, 
-                                                                     self.upper_isi)
-                    elif self.distribution =='exp':
-                        time = time + self.event_duration + np.random.choice(a, size=1, p=w)
+                    time = time + self.event_duration + np.random.choice(self.a, size=1, p=self.w)                    
                     
-                    else:
-                        raise ValueError('Invalid distribution')
                     f = 1
                     nevents = nevents + 1
                     
                 else:
                     self.onsets_B = np.append(self.onsets_B, time)
                     self.onsets_all = np.append(self.onsets_all,time)
-                    if self.distribution == 'uniform':
-                       time = time + self.event_duration + np.random.uniform(self.lower_isi, 
-                                                                    self.upper_isi)
-                    elif self.distribution =='exp':
-                       time = time + self.event_duration + np.random.choice(a, size=1, p=w)
+                    time = time + self.event_duration + np.random.choice(self.a, size=1, p=self.w)
                    
-                    else:
-                        raise ValueError('Invalid distribution')
                     f = 0
                     nevents = nevents + 1
 
@@ -204,19 +250,19 @@ class expdesign:
                                                    )
         
         #Transient activity introduced
-        stimfunc_B1 = stimfunc_B
-        if self.load:
-            stimfunc_B1 = self.transient(stimfunc_A,stimfunc_B1,self.lower_isi,self.upper_isi)
+        if self.load == 'wmmap':
+            stimfunc_B = self.transient(stimfunc_A,stimfunc_B,self.lower_isi,self.upper_isi)
+        elif self.load == 'attnmap':
+            stimfunc_A = self.transient(stimfunc_A,stimfunc_B,self.lower_isi,self.upper_isi)
 
-
-        # Multiply each pattern by each voxel time course
+            # Multiply each pattern by each voxel time course
         weights_A = np.empty((0,1))
         weights_B = np.empty((0,1))
         weights_B1 = np.empty((0,1))
 
         weights_A = np.matlib.repmat(stimfunc_A, 1, self.loadvolume.voxels).transpose() * pattern_A
         weights_B = np.matlib.repmat(stimfunc_B, 1, self.loadvolume.voxels).transpose() * pattern_B
-        weights_B1 = np.matlib.repmat(stimfunc_B1, 1, self.loadvolume.voxels).transpose() * pattern_B
+        weights_B1 = np.matlib.repmat(stimfunc_B, 1, self.loadvolume.voxels).transpose() * pattern_B
 
 
         
@@ -226,10 +272,10 @@ class expdesign:
         stimfunc_weighted = weights_B1 + weights_A
         stimfunc_weighted = stimfunc_weighted.transpose()
         self.temp = stimfunc_weighted
-
+        
 
         signal_func = fmrisim.convolve_hrf(stimfunction=stimfunc_weighted,
-                                           tr_duration=self.loadvolume.tr,
+                                           tr_duration=self.loadvolume.tr,hrf_type = hrf_type,params = params,
                                            temporal_resolution=self.temporal_res,
                                            scale_function=0,nonlin = self.nonlin)
 
@@ -252,7 +298,6 @@ class expdesign:
                                                            method=signal_method,)
         
         signal = fmrisim.apply_signal(signal_func_scaled,self.loadvolume.signal_volume,)
-        signal = signal[:,:,:,:-3]
         self.temp = signal
         if self.noise:
             

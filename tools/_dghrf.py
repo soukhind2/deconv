@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Apr 14 15:57:16 2020
-
+Forked from fmrisim (Ellis et. al. 2020)
 @author: sdas
 """
 import math

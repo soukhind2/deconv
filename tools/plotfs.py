@@ -25,6 +25,7 @@ __all__ =[
 import matplotlib.pyplot as plt
 import numpy as np
 import copy
+import itertools
 
 
 def plot_result(data1,data2,normalize = False,title1 = "Detection Power",
@@ -303,6 +304,46 @@ def graph_timecourses(result, time_courses, stimuli = [ 'A', 'B' ], xlim = 50, y
 
     return fig
 
+def plot_null_ratios(const_lisi,
+                     lim_uisi,
+                     null_ratios,
+                     det,
+                     est):
+
+
+    num_lines = len(det.T)
+    cmap = plt.cm.get_cmap('tab10',num_lines + 5)
+    legend_names = null_ratios.astype(str)
+    xlabels = np.arange(const_lisi,lim_uisi + const_lisi + 1,1).astype(str)
+    xlabels[0] = xlabels[0] + 's const.'
+
+    fig = plt.figure(figsize = (10,13))
+    
+    ax = fig.add_subplot(211)
+    marker = itertools.cycle(('s', 'v', '.', 'o', '*')) 
+    plt.title('Detection power as null ratios',fontsize = 20)
+    plt.ylabel('Detetion power',fontsize = 20)
+    plt.xticks(np.arange(0,lim_uisi + 1,1),xlabels,fontsize = 10)
+    for i in range(num_lines):
+        data = det[:,i]
+        plt.plot(data.T, marker = next(marker),color = cmap(i),label=legend_names[i])
+        plt.legend(title = 'Null ratios')
+        
+        
+    ax = fig.add_subplot(212)
+    marker = itertools.cycle(('s', 'v', '.', 'o', '*')) 
+    plt.title('Estimation efficiency as null ratios',fontsize = 20)
+    plt.ylabel('Estimation efficiency ',fontsize = 20)
+    plt.xlabel('Upper Bound of ISI',fontsize = 20)
+    plt.xticks(np.arange(0,lim_uisi + 1,1),xlabels,fontsize = 10)
+    for i in range(num_lines):
+        data = est[:,i]
+        plt.plot(data.T, marker = next(marker),color = cmap(i),label=legend_names[i])
+        plt.legend(title = 'Null ratios')
+        
+        
+        
+
 def avg_response(onsets, brain, before, after):
     
     """
@@ -371,3 +412,4 @@ def remove_irrelevant(x, excluded_stimuli = 'A' ):
             order = order + 1
             order = order % 2
     return x
+

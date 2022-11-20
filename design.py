@@ -340,7 +340,7 @@ class expdesign:
         self.onsets_A = self.onsets_A.transpose()
         self.onsets_B = self.onsets_B.transpose()
         
-        if self.null_ratio:
+        if self.null_ratio != 0 and self.null_ratio != None:
             self.onsets_B = np.sort(np.random.choice(self.onsets_B,
                                                      int(len(self.onsets_B)*self.null_ratio)
                                                      ,replace = False))

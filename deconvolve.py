@@ -3,6 +3,8 @@ import numpy as np
 import noise
 import time
 from tools import plotfs
+
+
 """
 Created on Nov 15 14:16:41 2022
 
@@ -131,6 +133,113 @@ def run_experiment(max_lisi, max_uisi, noise_volume, parameters):
 
     return p1, p2, result
     
+def run_null_experiment(constant_lisi, max_uisi,null_ratios, noise_volume, parameters):
+    
+    """
+        Generates the timecourses and calculates their measures of optimality 
+        using the design parameters provided for null events.
+        
+        Parameters
+        ----------
+        constant_lisi: int
+            Constant value of lower ISI to test.
+            
+        max_uisi: int
+            Maximum bound of the upper ISI to test.
+        null_ratios: list of int
+            List of ratios that will set the ratio of B events to null
+            
+        noise_volume: Object of noise
+            Noise object obtained from load_noise()
+            
+        parameters: dict
+            Dictionary of parameters
+            
+            {
+                "event_duration" : float,
+                "signal_mag": int,
+                "distribution" : "uniform"/"stochastic_rapid"/"stochastic_interm"/"stochastic_slow"/"exp"
+                "dist_param" : int,
+                "stim_ratio" : float,0-1 (Optional = 1)
+                "noise" :  True or False, (Optional = False)
+                "nonlinear" : True or False, (Optional = False)
+                "null_ratio": float,0-1 (Optional = 1)
+                "transient_load": "attn"/"wm" (Optional = None)
+             }
+             
+        __________
+        
+        Returns: 
+        p1 = Detection power of all combinations of parameters
+        p2 = Estimation efficiency of all combinations of parameters
+        result = Timecourses of all combinations of parameters
+        
+    """
+    
+    
+    # Initialize empty list to store efficiency measures
+    p1 = np.zeros((len(null_ratios), max_uisi-constant_lisi + 1))
+    p2 = np.zeros((len(null_ratios), max_uisi-constant_lisi + 1))
+    result = {}
+
+    start = time.time()
+
+    #Start a loop to iterate through all combinatins of lisi and uisi
+    lisi = constant_lisi
+    k = 0
+    for ratio in null_ratios:
+        result[str(lisi)] = {}
+        l = 0
+        for uisi in np.arange(lisi, max_uisi + 1, 1):
+            if lisi > uisi:
+                l += 1
+                continue
+
+            #Create a expdesign object with all the set parameters
+            d = design.expdesign(
+                         lisi,
+                         uisi,
+                         parameters["event_duration"], 
+                         noise_volume,  
+                         parameters["signal_mag"], 
+                         stim_ratio = parameters["stim_ratio"],
+                         null_ratio = ratio, 
+                         noise = parameters["noise"], 
+                         nonlinear = parameters["nonlinear"], 
+                         load = parameters["transient_load"]
+                        )
+            # Create a jitter distribution that will be used to determine the nature of ISI
+            w = d.create_jitter(parameters["distribution"], 
+                                parameters["dist_param"])
+
+
+            #Generate the timecourse
+            data = d.tcourse(parameters["hrf_type"],parameters["hrf_params"])
+
+            #Calculate the optimality measures of the generated timecourse
+            e = design.expanalyse(data, np.array([1, 0]), expdesign = d)
+
+            #Store the optimality measures 
+            p1[k,l] = e.calc_Fd()
+            p2[k,l] = e.calc_Fe(ncond =2)
+
+            #Store the generated timecourses 
+            result[str(lisi)][str(uisi)] = {
+                "e": e.roi,
+                "t": e.design[:,0] + e.design[:,1],
+                "t1": e.design[:,0],
+                "t2": e.design[:,1]
+            }
+
+            l += 1
+        k += 1
+
+    print(f'Time elapsed: {time.time() - start}')
+    #plotfs.plot_jitter_dist(w_store)
+
+    return p1, p2, result
+    
+
     
 def load_noise(noise_file_path):
     

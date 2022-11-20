@@ -19,6 +19,7 @@ A future release will include support for multiple stimuli in a trial similar to
 # Installation
 
 If you have ```git```, you can fetch a local copy by:
+
 ```
 git clone https://github.com/soukhind2/deconv.git
 ```
@@ -28,7 +29,14 @@ Otherwise, you can download from here: [Download Toolbox](https://github.com/sou
 
 To run jupyter notebooks, open a Terminal and ```cd``` to the toolbox directory and run:
 ```
+python3 -m notebook --allow-root --nobrowser --ip=0.0.0.0
+```
 
+To install the dependencies, run:
+
+```
+pip -r install requirements.txt
+```
 
 # Examples
 

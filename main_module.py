@@ -1,10 +1,11 @@
-import design
+mimport design
 import numpy as np
 import loadvolume
 import time
+import functools
 
 __all__ = [
-    "test",
+    "run_experiment",
     "load_noise"
 ]
 
@@ -26,6 +27,12 @@ def run_experiment(max_lisi, max_uisi, lv, parameters):
 
     k = 0
     start = time.time()
+    
+    if parameters["paradigm"]:
+        arg_map = parameters["paradigm"] + 'map'
+    else:
+        arg_map = None
+    
     d = design.expdesign(parameters["event_duration"], parameters["tevents"], parameters["signal_mag"], lv, parameters["distribution"], parameters["exp"], parameters["cue_ratio"], noise = parameters["noise"], nonlinear = parameters["nonlinear"], load = arg_map)
     # store = 1
     for lisi in np.arange(1, max_lisi + 1, 1):
@@ -35,11 +42,7 @@ def run_experiment(max_lisi, max_uisi, lv, parameters):
             if lisi > uisi:
                 l += 1
                 continue
-            if parameters["paradigm"]:
-                arg_map = parameters["paradigm"] + 'map'
-            else:
-                arg_map = None
-
+            
             #d = design.expdesign(lisi, uisi, parameters["event_duration"], parameters["tevents"], parameters["signal_mag"], lv, parameters["distribution"], parameters["exp"], parameters["cue_ratio"], noise = parameters["noise"], nonlinear = parameters["nonlinear"], load = arg_map)
 
             data = d.tcourse(lisi,uisi)
@@ -67,3 +70,31 @@ def load_noise(noise_file_path):
     lv.generate_noise()
     lv.generate_region()
     return lv
+
+
+def convertToExpermentConfig(configSubString):
+    if '.' in configSubString:
+        return { "type": 'event', "name": configSubString.split('.')[0], "event-duration": int(configSubString.split('.')[1]) }
+    elif '{' in configSubString:
+        interEventsConfig = { "type": 'inter-events', "lsis": -1, "usis": -1, "distribution": None, "paradigm": None }
+        processedString = configSubString[1 : -1]
+        configStrings = list(map(lambda x: x.strip(), processedString.split(',')))
+        
+        for setting in configStrings:
+            if '-' in setting:
+                interEventsConfig['lsis'] = int(setting.split('-')[0])
+                interEventsConfig['usis'] = int(setting.split('-')[1])
+            elif setting.isnumeric():
+                interEventsConfig['lsis'] = int(setting)
+                interEventsConfig['usis'] = int(setting)
+            elif setting in [ 'exp', 'uniform', 'stochastic_rapid', 'stochastic_interm', 'stochastic_slow' ]:
+                interEventsConfig['distribution'] = setting
+            elif setting in [ 'wm', 'attn' ]:
+                interEventsConfig['distribution'] = setting
+    
+        return interEventsConfig
+    
+
+def parseExperimentConfigStr(configString):
+    elements = functools.reduce(lambda a, b: a + b, list(map(lambda s: s.split('['), expConfigStr.split(']'))))
+    return list(map(convertToExpermentConfig, list(filter(lambda e: e, elements))))

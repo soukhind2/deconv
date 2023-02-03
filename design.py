@@ -16,7 +16,7 @@ importlib.reload(fmrisim)
 
 class expdesign:
     
-    def __init__(self,l,u,edur,tevents,
+    def __init__(self,edur,tevents,
                  signal_mag,loadvolume,
                  distribution,
                  dist_param = None,
@@ -27,15 +27,15 @@ class expdesign:
                  load = None,
                 ):
         
-        self.lower_isi = l
-        self.upper_isi = u
+        # self.lower_isi = l
+        # self.upper_isi = u
         self.total_events = tevents
         self.burn_in = 5
         self.onsets_A = np.empty((0,1))
         self.onsets_B = np.empty((0,1))
         self.onsets_all = np.empty((0,1))
         self.cue_ratio = cue_ratio # Value between 0-1
-        self.null_ratio = null_ratio
+        self.null_ratio = null_ratio # Value between 0-1
         self.temporal_res = 10.0 # How many timepoints per second of the stim function are to be generated?
         self.event_duration = edur  # How long is each event
         self.loadvolume = loadvolume
@@ -120,24 +120,23 @@ class expdesign:
                 else:
                     raise ValueError('Invalid transient map arguement')
 
-    def create_jitter(self):
+    def create_jitter(self, lower_isi, upper_isi, distribution):
         
-        if self.distribution not in ['exp','uniform','stochastic_rapid','stochastic_interm','stochastic_slow']:
+        if distribution not in ['exp','uniform','stochastic_rapid','stochastic_interm','stochastic_slow']:
             raise ValueError('Invalid Distribution')
             
-        if self.lower_isi != self.upper_isi and self.distribution != 'uniform':
-            a = np.arange(self.lower_isi,self.upper_isi,0.1)
-
-            if self.distribution == 'exp':
+        if lower_isi != upper_isi and distribution != 'uniform':
+            a = np.arange(lower_isi, upper_isi,0.1)
+            if distribution == 'exp':
                 ai = np.arange(a.size)        # an array of the index value for weighting
 
                 if self.exp:
                     w = np.exp(ai/self.exp)            # higher weights for larger index values
                 else:
-                    w = np.exp(ai/30)            # higher weights for larger index values
+                    w = np.exp(ai/ai[len(ai) - 1])            # higher weights for larger index values
 
 
-            elif self.distribution == 'stochastic_rapid':
+            elif distribution == 'stochastic_rapid':
                 ai = np.arange(a.size)        # an array of the index value for weighting
                 if self.exp:
                     w = np.cos(ai/self.exp)            # higher weights for larger index values
@@ -146,7 +145,7 @@ class expdesign:
                 w = w + + abs(min(w))
 
 
-            elif self.distribution == 'stochastic_interm':
+            elif distribution == 'stochastic_interm':
                 ai = np.arange(a.size)        # an array of the index value for weighting
                 if self.exp:
                     w = np.cos(ai/self.exp)            # higher weights for larger index values
@@ -154,7 +153,7 @@ class expdesign:
                     w = np.cos(ai/(a.size/20))  #20 is chosen for interm cycles
                 w = w + + abs(min(w))
 
-            elif self.distribution == 'stochastic_slow':
+            elif distribution == 'stochastic_slow':
                 ai = np.arange(a.size)        # an array of the index value for weighting
                 if self.exp:
                     w = np.cos(ai/self.exp)            # higher weights for larger index values
@@ -164,105 +163,119 @@ class expdesign:
             
             w /= w.sum()                 # weight must be normalized
             
-            self.w = w
-            self.a = a
-            return w
+            # self.w = w
+            # self.a = a
+            return (w, a)
             
-        elif self.distribution == 'uniform' and self.lower_isi != self.upper_isi:
-            a = np.arange(self.lower_isi,self.upper_isi,0.1)
+        elif distribution == 'uniform' and lower_isi != self.upper_isi:
+            a = np.arange(lower_isi,self.upper_isi,0.1)
             w = np.ones(a.size)
             w/= w.sum()
-            self.w = w
-            self.a = a
+            # self.w = w
+            # self.a = a
             
-            return w
+            return (w, a)
         
         
 
-    def tcourse(self,hrf_type = 'double_gamma',params = None):
-        pattern_A = self.cue_r * np.ones((27,1))
-        pattern_B = np.ones((27,1))
-        time = self.burn_in
-        f = 0 # Variable to switch between two conditions 
-        nevents = 0
+#     def generate_tcourse(self, configuration, lower_isi, upper_isi, hrf_type = 'double_gamma', params = None, onserts_all, event_duration, stimulus_name, distribution):
+#         # pattern_A = self.cue_ratio * np.ones((27,1))
+#         pattern = np.ones((27,1))
+#         time = self.burn_in
+#         f = 0 # Variable to switch between two conditions 
+#         nevents = 0
+        
+#         (w, a) = self.create_jitter(lower_isi, upper_isi, distribution)
 
+#         current_onsets = np.empty((0,1))
             
-        total_time = int(self.loadvolume.dim[3] * self.loadvolume.tr)   # How long is the total event time course
-        while time <= (total_time ) :
-        #while nevents <= self.total_events:
-            if self.lower_isi == self.upper_isi:
+#         total_time = int(self.loadvolume.dim[3] * self.loadvolume.tr)   # How long is the total event time course
+#         while time <= (total_time ) :
+#         #while nevents <= self.total_events:
+#             if lower_isi == upper_isi:
                 
-                if f == 0:
-                    self.onsets_A = np.append(self.onsets_A, time)
-                    self.onsets_all = np.append(self.onsets_all,time)
-                    time = time + self.event_duration + self.lower_isi
-                    f = 1
-                    nevents = nevents + 1
-                else:
-                    self.onsets_B = np.append(self.onsets_B, time)
-                    self.onsets_all = np.append(self.onsets_all,time)
-                    time = time + self.event_duration + self.lower_isi
-                    f = 0
-                    nevents = nevents + 1
-            else:
+#                 # if f == 0:
+#                     current_onsets = np.append(current_onsets, time)
+#                     onsets_all = np.append(onsets_all,time)
+#                     time = time + event_duration + lower_isi
+#                     f = 1
+#                     nevents = nevents + 1
+#                 # else:
+#                 #     self.onsets_B = np.append(self.onsets_B, time)
+#                 #     self.onsets_all = np.append(self.onsets_all,time)
+#                 #     time = time + event_duration + lower_isi
+#                 #     f = 0
+#                 #     nevents = nevents + 1
+#             else:
                         
-                if f == 0:
-                    self.onsets_A = np.append(self.onsets_A, time)
-                    self.onsets_all = np.append(self.onsets_all,time)
-                    time = time + self.event_duration + np.random.choice(self.a, size=1, p=self.w)                    
+#                 # if f == 0:
+#                     current_onsets = np.append(current_onsets, time)
+#                     onsets_all = np.append(onsets_all,time)
+#                     time = time + event_duration + np.random.choice(a, size=1, p=w)                    
                     
-                    f = 1
-                    nevents = nevents + 1
+#                     f = 1
+#                     nevents = nevents + 1
                     
-                else:
-                    self.onsets_B = np.append(self.onsets_B, time)
-                    self.onsets_all = np.append(self.onsets_all,time)
-                    time = time + self.event_duration + np.random.choice(self.a, size=1, p=self.w)
+# #                 else:
+# #                     self.onsets_B = np.append(self.onsets_B, time)
+# #                     self.onsets_all = np.append(self.onsets_all,time)
+# #                     time = time + self.event_duration + np.random.choice(self.a, size=1, p=self.w)
                    
-                    f = 0
-                    nevents = nevents + 1
+# #                     f = 0
+# #                     nevents = nevents + 1
 
         
-        #total_time = time
+#         #total_time = time
 
-        self.onsets_A = self.onsets_A.transpose()
-        self.onsets_B = self.onsets_B.transpose()
+# #         self.onsets_A = self.onsets_A.transpose()
+# #         self.onsets_B = self.onsets_B.transpose()
         
-        if self.null_ratio:
-            self.onsets_B = np.sort(np.random.choice(self.onsets_B,
-                                                     int(len(self.onsets_B)*self.null_ratio)
-                                                     ,replace = False))
+#         # if self.null_ratio:
+#         #     self.onsets_B = np.sort(np.random.choice(self.onsets_B,
+#         #                                              int(len(self.onsets_B)*self.null_ratio)
+#         #                                              ,replace = False))
             
-        stimfunc_A = np.empty((0,1))
-        stimfunc_B = np.empty((0,1))
-
-
-        stimfunc_A = fmrisim.generate_stimfunction(onsets=self.onsets_A,
-                                                   event_durations=[self.event_duration],
-                                                   total_time=total_time,
-                                                   temporal_resolution=self.temporal_res,
-                                                   )
-
-        stimfunc_B = fmrisim.generate_stimfunction(onsets=self.onsets_B,
-                                                   event_durations=[self.event_duration],
-                                                   total_time=total_time,
-                                                   temporal_resolution=self.temporal_res,
-                                                   )
+#         # stimfunc_A = np.empty((0,1))
+#         # stimfunc_B = np.empty((0,1))
         
+#         stimfunc = np.empty((0,1))
+
+
+#         stimfunc = fmrisim.generate_stimfunction(onsets=current_onsets,
+#                                                    event_durations=[event_duration],
+#                                                    total_time=total_time,
+#                                                    temporal_resolution=self.temporal_res,
+#                                                    )
+        
+#         # stimfunc_A = fmrisim.generate_stimfunction(onsets=self.onsets_A,
+#         #                                            event_durations=[self.event_duration],
+#         #                                            total_time=total_time,
+#         #                                            temporal_resolution=self.temporal_res,
+#         #                                            )
+
+#         # stimfunc_B = fmrisim.generate_stimfunction(onsets=self.onsets_B,
+#         #                                            event_durations=[self.event_duration],
+#         #                                            total_time=total_time,
+#         #                                            temporal_resolution=self.temporal_res,
+#         #                                            )
+        
+#         return (current_onsets, onsets_all, stimfunc)
+        
+    def get_transient_added_signal(self, stimfunc_cues, stimfunc_target, pattern_cues, pattern_target, load, nonlin):
         #Transient activity introduced
-        if self.load == 'wmmap':
-            stimfunc_B = self.transient(stimfunc_A,stimfunc_B,self.lower_isi,self.upper_isi)
-        elif self.load == 'attnmap':
-            stimfunc_A = self.transient(stimfunc_A,stimfunc_B,self.lower_isi,self.upper_isi)
+        if load == 'wmmap':
+            stimfunc_target = self.transient(stimfunc_cues,stimfunc_target,lower_isi,self.upper_isi)
+        elif load == 'attnmap':
+            stimfunc_cues = self.transient(stimfunc_cues,stimfunc_target,lower_isi,self.upper_isi)
 
             # Multiply each pattern by each voxel time course
         weights_A = np.empty((0,1))
         weights_B = np.empty((0,1))
         weights_B1 = np.empty((0,1))
 
-        weights_A = np.matlib.repmat(stimfunc_A, 1, self.loadvolume.voxels).transpose() * pattern_A
-        weights_B = np.matlib.repmat(stimfunc_B, 1, self.loadvolume.voxels).transpose() * pattern_B
-        weights_B1 = np.matlib.repmat(stimfunc_B, 1, self.loadvolume.voxels).transpose() * pattern_B
+        weights_A = np.matlib.repmat(stimfunc_cues, 1, self.loadvolume.voxels).transpose() * pattern_cues
+        weights_B = np.matlib.repmat(stimfunc_target, 1, self.loadvolume.voxels).transpose() * pattern_target
+        weights_B1 = np.matlib.repmat(stimfunc_target, 1, self.loadvolume.voxels).transpose() * pattern_target
 
 
         
@@ -277,7 +290,7 @@ class expdesign:
         signal_func = fmrisim.convolve_hrf(stimfunction=stimfunc_weighted,
                                            tr_duration=self.loadvolume.tr,hrf_type = hrf_type,params = params,
                                            temporal_resolution=self.temporal_res,
-                                           scale_function=0,nonlin = self.nonlin)
+                                           scale_function=0,nonlin = nonlin)
 
         # Specify the parameters for signal
         signal_method = 'PSC'
@@ -298,14 +311,156 @@ class expdesign:
                                                            method=signal_method,)
         
         signal = fmrisim.apply_signal(signal_func_scaled,self.loadvolume.signal_volume,)
+        return signal
+    
+    def add_signal_to_brain(self, signal, noise, brain):
+        
         self.temp = signal
         if self.noise:
             
-            self.brain = signal + self.loadvolume.noise
+            brain = signal + self.loadvolume.noise
         else:
-            self.brain = signal
+            brain = signal
         
-        return self.brain
+        return brain
+    
+    #[{'type': 'event', 'name': 'C1', 'event-duration': 100},
+    # {'type': 'inter-events',
+    #  'lsis': 2000,
+    #  'usis': 6000,
+    #  'distribution': 'exp',
+    #  'paradigm': 'attn'},
+    # {'type': 'event', 'name': 'T1', 'event-duration': 200},
+    # {'type': 'inter-events',
+    #  'lsis': 50,
+    #  'usis': 50,
+    #  'distribution': None,
+    #  'paradigm': None},
+    # {'type': 'event', 'name': 'M1', 'event-duration': 50},
+    # {'type': 'inter-events',
+    #  'lsis': 700,
+    #  'usis': 900,
+    #  'distribution': 'exp',
+    #  'paradigm': 'attn'},
+    # {'type': 'event', 'name': 'R', 'event-duration': 500}]
+    def generate_tcourse(self, configurations, total_time, temporal_resolution):
+        tcourse_groups = []
+        paradigm_configs = []
+        time = 0
+        for config in configurations:
+            current_event_duration = 0
+            current_config_tcourse = []
+            current_paradigm_configs = []
+            for i in range(0, len(config)):
+                event = config[i]
+                if event["type"] == "event":
+                    current_event_duration += event["event-duration"]
+                    current_config_tcourse.append({ "duration": event["event-duration"], "type": "event", "name": event["name"] })
+                elif event["type"] == "inter-events":
+                    lsis = event["lsis"]
+                    usis = event["usis"]
+                    distribution = event["distribution"]
+                    paradigm = event["paradigm"]
+                    duration = 0
+                    if lsis == usis:
+                        duration = lsis
+                        current_config_tcourse.append({ "duration": lsis, "type": "inter-events" })
+                    else:
+                        (w, a) = self.create_jitter(lsis, usis, distribution)
+                        random_duration = int(np.random.choice(a, size=1, p=w)[0])
+                        duration = random_duration
+                        current_config_tcourse.append({ "duration": random_duration, "type": "inter-events" })
+                        
+                    if paradigm is not None:
+                        previous_event_duration = current_config_tcourse[len(current_config_tcourse) - 2]["duration"]
+                        previous_event = time + current_event_duration - previous_event_duration
+                        current_paradigm_configs.append({ "paradigm": paradigm, "first_event_index": previous_event * temporal_resolution, "first_event_duration": previous_event_duration, "second_event_index": (time + current_event_duration + current_config_tcourse[len(current_config_tcourse) - 1]["duration"]) * temporal_resolution, "lsis": lsis, "usis": usis })
+                    
+                    current_event_duration += duration
+                
+            time += current_event_duration
+            if time > total_time:
+                break;
+            else:
+                tcourse_groups.append(current_config_tcourse)
+                paradigm_configs.append(current_paradigm_configs)
+                
+        return (tcourse_groups, paradigm_configs)
+    
+    def convert_tcourse_info_array(self, tcourse_info_array):
+        tcourse = []
+        time_point = 0
+        for tcourse_info in tcourse_info_array:
+            if tcourse_info["type"] == "event":
+                tcourse.append(time_point)
+            time_point += tcourse_info["duration"]
+            
+        return tcourse
+            
+    
+    def apply_transients(self, tcourse_groups, paradigm_configs, temporal_resolution, total_time, sub_imp = 0.8):
+        tcourse = []
+        event_durations = []
+        for tcourse_info_array in tcourse_groups:
+            tcourse.extend(self.convert_tcourse_info_array(tcourse_info_array))
+            event_durations.extend(map(lambda info: info["duration"], filter(lambda info: info["type"] == "event", tcourse_info_array)))
+            
+        print((tcourse, event_durations))
+            
+        stimuli_function = fmrisim.generate_stimfunction(onsets = tcourse,
+                                                   event_durations = event_durations,
+                                                   total_time = total_time,
+                                                   temporal_resolution = temporal_resolution,
+                                                   )
+        print(stimuli_function)
+        for paradigm_config_array in paradigm_configs:
+            for paradigm_config in paradigm_config_array:
+                l = paradigm_config["lsis"] / 1000
+                u = paradigm_config["usis"] / 1000
+                paradigm = paradigm_config["paradigm"]
+                i = paradigm_config["first_event_index"]
+                j = paradigm_config["second_event_index"]
+                tr = temporal_resolution
+                if paradigm == 'attnmap':
+                    if l <= 7 and u <= 9:
+                        stimuli_function[ i + 1 : i + 1 + tr * 1 ] = sub_imp                    
+                    elif ((l <= 7 and u >= 10 and u <= 13) or (l <= 5 and u >= 14)
+                          or (l == 8 and u >= 8 and u <= 9)
+                          or (l == 9 and u == 9)):
+                        stimuli_function[ i + 1 : i + 1 + tr * 4 ] = sub_imp                    
+
+                    elif (((l == 6 or l == 7) and u >= 14 and u <= 20) 
+                          or ((l >=8 and l <= 10) and u >= 10 and u <= 13)
+                          or ((l >= 10 and l <= 13) and u >= 11 and u <= 13)):
+                        stimuli_function[ i + 1 + tr * int(l/2)  : i + 1 + tr * int(l/2) + tr * 1 ] = sub_imp                    
+
+
+                    elif (((l == 8 or l == 9) and u >= 14 and u <= 20) 
+                        or ((l == 10 or l == 11) and u >= 14 and u <= 20)
+                        or ((l >= 12 and l <= 14) and u >= 14 and u <= 20)
+                        or ((l == 14 or l == 15) and u >= 15 and u <= 20)
+                        or (l >= 16 and u >= 15 and u <= 20)):
+                        stimuli_function[ i + 1 + tr * int(l/2)  : i + 1 + tr * int(l/2) + tr * 4 ] = sub_imp
+
+                elif paradigm == 'wmmap':
+                    # idxA = np.where(etrain == 1)[0][:]
+                    # idxB = np.where(etrain2 == 1)[0][:]
+                    # minl = min(len(idxA),len(idxB))
+                    # for i in range(minl):
+                    #     if idxA[i] > idxB[i]:
+                    #         idxB[i] = 0  #This is used to treat for any error 
+                    #         # sampling, or when the two events are not alternate
+
+                    if ((l <= 9 and u <= 13) or (l <= 5)):
+                        stimuli_function[ i + 1 : j ] = sub_imp
+
+                    else:
+                        stimuli_function[ i + 1 + tr * int(l/2) : j ] = sub_imp 
+
+                else:
+                    raise ValueError('Invalid transient map arguement')
+        return stimuli_function
+        
 
     
 class expanalyse:

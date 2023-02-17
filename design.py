@@ -188,7 +188,7 @@ class expdesign:
                 event = config[i]
                 if event["type"] == "event":
                     current_event_duration += event["event-duration"]
-                    current_config_tcourse.append({ "duration": event["event-duration"], "type": "event", "name": event["name"] })
+                    current_config_tcourse.append({ "duration": event["event-duration"], "type": "event", "name": event["name"], "intensity": float(event["intensity"]) if event["intensity"] is not None else 1.0 })
                 elif event["type"] == "inter-events":
                     lsis = event["lsis"]
                     usis = event["usis"]
@@ -200,7 +200,7 @@ class expdesign:
                         current_config_tcourse.append({ "duration": lsis, "type": "inter-events" })
                     else:
                         (w, a) = self.create_jitter(lsis, usis, distribution)
-                        random_duration = int(np.random.choice(a, size=1, p=w)[0])
+                        random_duration = int(np.random.choice(a, size = 1, p = w)[0])
                         duration = random_duration
                         current_config_tcourse.append({ "duration": random_duration, "type": "inter-events" })
                         
@@ -220,32 +220,46 @@ class expdesign:
                 
         return (tcourse_groups, paradigm_configs)
     
+    
+    
     def convert_tcourse_info_array(self, tcourse_info_array):
         tcourse = []
         time_point = 0
         for tcourse_info in tcourse_info_array:
             if tcourse_info["type"] == "event":
-                tcourse.append(time_point)
+                tcourse.append({ "time_point": time_point, "event_name": tcourse_info["name"] })
             time_point += tcourse_info["duration"]
             
         return tcourse
             
-    
-    def apply_transients(self, tcourse_groups, paradigm_configs, temporal_resolution, total_time, sub_imp = 0.8):
+        
+    def fabricate_stimuli_function(self, tcourse_groups, temporal_resolution, total_time):
         tcourse = []
         event_durations = []
+        event_onsets = []
+        onset_intensities = []
         for tcourse_info_array in tcourse_groups:
-            tcourse.extend(self.convert_tcourse_info_array(tcourse_info_array))
+            current_event_onsets = self.convert_tcourse_info_array(tcourse_info_array)
+            event_onsets.extend(current_event_onsets)
+            tcourse.extend(map(lambda t : t["time_point"], current_event_onsets))
             event_durations.extend(map(lambda info: info["duration"], filter(lambda info: info["type"] == "event", tcourse_info_array)))
+            onset_intensities.extend(map(lambda info: info["intensity"], filter(lambda info: info["type"] == "event", tcourse_info_array)))
             
-        print((tcourse, event_durations))
+        # print((tcourse, event_durations))
             
         stimuli_function = fmrisim.generate_stimfunction(onsets = tcourse,
                                                    event_durations = event_durations,
                                                    total_time = total_time,
+                                                   weights = onset_intensities,
                                                    temporal_resolution = temporal_resolution,
                                                    )
-        print(stimuli_function)
+        
+        return (stimuli_function, tcourse, event_onsets, onset_intensities)
+    
+    def apply_transients(self, tcourse_groups, paradigm_configs, temporal_resolution, total_time, sub_imp = 0.8):
+        
+        (stimuli_function, tcourse, event_onsets, onset_intensities) = self.fabricate_stimuli_function(tcourse_groups, temporal_resolution, total_time)
+        
         for paradigm_config_array in paradigm_configs:
             for paradigm_config in paradigm_config_array:
                 l = paradigm_config["lsis"] / 1000
@@ -295,6 +309,39 @@ class expdesign:
         return stimuli_function
         
 
+    def produce_signal(self, loadvolume, stimuli_function, temporal_resolution, is_non_linear, signal_magnitude, noiseAdded, hrf_type = 'double_gamma', cutome_hrf_params = None):
+        expanded_stimfunc = np.matlib.repmat(stimuli_function, 1, loadvolume.voxels)
+        
+
+        signal_func = fmrisim.convolve_hrf(stimfunction = expanded_stimfunc,
+                                           tr_duration = self.loadvolume.tr,hrf_type = hrf_type,params = cutome_hrf_params,
+                                           temporal_resolution = temporal_resolution,
+                                           scale_function = 0, nonlin = is_non_linear)
+
+
+        # Where in the brain are there stimulus evoked voxels
+        # The np.where is traversing through the self.signal_volume across every coordinate and looking where the signal is to be 
+        # evoked as set before
+        signal_idxs = np.where(loadvolume.signal_volume == 1)
+
+        # Pull out the voxels corresponding to the noise volume
+        noise_func = loadvolume.noise[signal_idxs[0], signal_idxs[1], signal_idxs[2], :]
+
+        # Compute the signal appropriate scaled
+        signal_func_scaled = fmrisim.compute_signal_change(signal_function = signal_func,
+                                                           noise_function = noise_func.T,
+                                                           noise_dict = loadvolume.noise_dict,
+                                                           magnitude = signal_magnitude,
+                                                           method = 'PSC')
+        
+        signal = fmrisim.apply_signal(signal_func_scaled, loadvolume.signal_volume,)
+        
+        if noiseAdded:
+            
+            return signal + loadvolume.noise
+        else:
+            return signal
+        
     
 class expanalyse:
      
@@ -303,14 +350,28 @@ class expanalyse:
         self.expdesign = expdesign
 
         HRF = _dghrf()
-        self. boxcar_A = np.zeros(np.size(data,3))
-        self. boxcar_B = np.zeros(np.size(data,3))
         
-        self.boxcar_A[(self.expdesign.onsets_A/self.expdesign.loadvolume.tr).astype('int')] = 1
-        self.conv_boxcar_A = np.convolve(self.boxcar_A,HRF,'same')
+        events = filter(lambda info: info["type"] == 'event', data)
+        self.boxcars = {}
+        self.conv_boxcars = {}
+        for event in events:
+            if event["name"] in self.boxcars:
+                continue
+            
+            self.boxcars[event["name"]] = np.zeros(np.size(data,3))
+            onsets = map(lambda onset: onset["time_point"], filter(lambda onset: onset["event_name"] == event["name"], self.expdesign.event_onsets))
+            self.boxcars[event["name"]][(onsets / self.expdesign.loadvolume.tr).astype('int')] = 1
+            self.conv_boxcars[event["name"]] = np.convolve(self.boxcars[event["name"]],HRF,'same')
+        
+        
+#         self. boxcar_A = np.zeros(np.size(data,3))
+#         self. boxcar_B = np.zeros(np.size(data,3))
+        
+#         self.boxcar_A[(self.expdesign.onsets_A/self.expdesign.loadvolume.tr).astype('int')] = 1
+#         self.conv_boxcar_A = np.convolve(self.boxcar_A,HRF,'same')
        
-        self.boxcar_B[(self.expdesign.onsets_B/self.expdesign.loadvolume.tr).astype('int')] = 1
-        self.conv_boxcar_B = np.convolve(self.boxcar_B,HRF,'same')
+#         self.boxcar_B[(self.expdesign.onsets_B/self.expdesign.loadvolume.tr).astype('int')] = 1
+#         self.conv_boxcar_B = np.convolve(self.boxcar_B,HRF,'same')
         
         lb = (self.expdesign.loadvolume.coordinates - ((self.expdesign.loadvolume.feature_size - 1) / 2)).astype('int')[0]
         ub = (self.expdesign.loadvolume.coordinates + ((self.expdesign.loadvolume.feature_size - 1) / 2) + 1).astype('int')[0]
@@ -319,12 +380,16 @@ class expanalyse:
         roi_brain = roi_brain.reshape((self.expdesign.loadvolume.voxels,data.shape[3]))
         self.roi = roi_brain[13,:].T
         
-        self.X = np.zeros((self.conv_boxcar_A.shape[0],2))
-        self.design = np.empty((self.boxcar_A.shape[0],2))
-        self.X[:,0] = self.conv_boxcar_A
-        self.X[:,1] = self.conv_boxcar_B
-        self.design[:,0] = self.boxcar_A
-        self.design[:,1] = self.boxcar_B
+        conv_boxcars_list = list(self.conv_boxcars.values())
+        boxcars_list = list(self.boxcars.values())
+        self.X = np.zeros((conv_boxcars_list[0].shape[0],len(self.conv_boxcars)))
+        self.design = np.empty((boxcars_list[0].shape[0],len(self.boxcars)))
+        
+        for index, conv_boxcar in enumerate(conv_boxcars_list):
+            self.X[:,index] = conv_boxcar
+            
+        for index, boxcar in enumerate(boxcars_list):
+            self.design[:,index] = boxcar
         
         self.C = contrast
         
@@ -336,6 +401,7 @@ class expanalyse:
         rho = res_resid.params
         order = toeplitz(np.arange(len(self.roi)))
         sigma = rho**order
+        
         gls_model = sm.GLS(self.roi, self.X, sigma=sigma)
         gls_results = gls_model.fit()
         med = gls_model.cholsigmainv * sigma * gls_model.cholsigmainv.T

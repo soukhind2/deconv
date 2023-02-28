@@ -128,21 +128,21 @@ def remove_irrelevant(x, excluded_stimuli = 'A' ):
             order = order % 2
     return x
 
-def graph_timecourses(result, time_courses, stimuli = [ 'A', 'B' ], xlim = 50, ylim = 1.3):
+def graph_timecourses(result, lsis_usis_array, stimuli_onsets = [ { "time_point": 0, "event_name": 'A' } ], xlim = 50, ylim = 1.3):
     e_t_array = [];
-    for time_course in time_courses:
-        e_t = copy.deepcopy(result[str(time_course[0])][str(time_course[1])]);
+    for lsis_usis in lsis_usis_array:
+        e_t = copy.deepcopy(result[str(lsis_usis[0])][str(lsis_usis[1])]);
         
         t = remove_transient(e_t["t"])
-        if 'A' not in stimuli:
-            t = remove_irrelevant(t, 'A')
-        elif 'B' not in stimuli:
-            t = remove_irrelevant(t, 'B')
+        # if 'A' not in stimuli:
+        #     t = remove_irrelevant(t, 'A')
+        # elif 'B' not in stimuli:
+        #     t = remove_irrelevant(t, 'B')
             
-        e_t_array = [ *e_t_array, {
+        e_t_array.append({
             "e": e_t["e"] / np.max(e_t["e"]),
             "t": t, 
-        } ]
+        })
     
     fig = plt.figure(figsize = (20,10))
     
@@ -172,20 +172,13 @@ def graph_timecourses(result, time_courses, stimuli = [ 'A', 'B' ], xlim = 50, y
 
         #ax.set_title('Profile 5',fontsize = 15)
         f = 1
+        event_index = 0
         for i in range(0,xlim):
-            if e_t["t"][i] == 1:
-                marker = 'A'
-                if f == 1:
-                    marker = 'A'
-                    if 'A' not in stimuli:
-                        marker = 'B'
-                elif f == 0:
-                    marker = 'B'
-                    if 'B' not in stimuli:
-                        marker = 'A'
+            if e_t["t"][i] > 0:
+                marker = stimuli_onsets[event_index]['event_name']
                 ax.text(i - 0.1, 1.1, marker, fontsize = 12)
-                f = f + 1
-                f = f % 2
+                event_index += 1;
+                
     
     mainax.set_xlabel('TR',fontsize = 18)
     mainax.set_ylabel('Amplitude', fontsize = 18)

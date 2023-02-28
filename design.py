@@ -227,7 +227,7 @@ class expdesign:
         time_point = 0
         for tcourse_info in tcourse_info_array:
             if tcourse_info["type"] == "event":
-                tcourse.append({ "time_point": time_point, "event_name": tcourse_info["name"] })
+                tcourse.append({ "time_point": time_point, "event_name": tcourse_info["name"], "intensity": tcourse_info["intensity"] })
             time_point += tcourse_info["duration"]
             
         return tcourse
@@ -246,7 +246,7 @@ class expdesign:
             onset_intensities.extend(map(lambda info: info["intensity"], filter(lambda info: info["type"] == "event", tcourse_info_array)))
             
         # print((tcourse, event_durations))
-            
+            [0, 5]
         stimuli_function = fmrisim.generate_stimfunction(onsets = tcourse,
                                                    event_durations = event_durations,
                                                    total_time = total_time,
@@ -359,8 +359,12 @@ class expanalyse:
                 continue
             
             self.boxcars[event["name"]] = np.zeros(np.size(data,3))
-            onsets = map(lambda onset: onset["time_point"], filter(lambda onset: onset["event_name"] == event["name"], self.expdesign.event_onsets))
-            self.boxcars[event["name"]][(onsets / self.expdesign.loadvolume.tr).astype('int')] = 1
+            
+            current_event_onsets = filter(lambda onset: onset["event_name"] == event["name"], self.expdesign.event_onsets)
+            current_onsets = map(lambda onset: onset["time_point"], current_event_onsets)
+            for index, onset in enumerate(current_onsets):
+                self.boxcars[event["name"]][(onset / self.expdesign.loadvolume.tr).astype('int')] = current_event_onsets[index]["intensity"]
+            
             self.conv_boxcars[event["name"]] = np.convolve(self.boxcars[event["name"]],HRF,'same')
         
         

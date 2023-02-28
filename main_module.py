@@ -52,7 +52,7 @@ def run_experiment(max_lisi, max_uisi, lv, parameters):
 
             result[str(lisi)][str(uisi)] = {
                 "e": e.roi,
-                "t": e.design[:,0] + e.design[:,1],
+                "t": np.sum(e.design, axis = 1),
                 "t1": e.design[:,0],
                 "t2": e.design[:,1]
             }

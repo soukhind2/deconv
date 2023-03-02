@@ -128,25 +128,21 @@ def remove_irrelevant(x, excluded_stimuli = 'A' ):
             order = order % 2
     return x
 
-def graph_timecourses(result, lsis_usis_array, stimuli_onsets = [ { "time_point": 0, "event_name": 'A' } ], xlim = 50, ylim = 1.3):
+def graph_timecourses(result, stimuli_onsets = [ { "time_point": 0, "event_name": 'A' } ], xlim = 50, ylim = 1.3):
     e_t_array = [];
-    for lsis_usis in lsis_usis_array:
-        e_t = copy.deepcopy(result[str(lsis_usis[0])][str(lsis_usis[1])]);
-        
-        t = remove_transient(e_t["t"])
-        # if 'A' not in stimuli:
-        #     t = remove_irrelevant(t, 'A')
-        # elif 'B' not in stimuli:
-        #     t = remove_irrelevant(t, 'B')
-            
-        e_t_array.append({
-            "e": e_t["e"] / np.max(e_t["e"]),
-            "t": t, 
-        })
+    
+    e_t = copy.deepcopy(result);
+
+    t = remove_transient(e_t["t"])
+    
+    e_t_array.append({
+        "e": e_t["e"] / np.max(e_t["e"]),
+        "t": t, 
+    })
     
     fig = plt.figure(figsize = (20,10))
     
-    num_figures = len(time_courses)
+    num_figures = 1
     
     
     mainax = fig.add_subplot(111)

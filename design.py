@@ -16,35 +16,22 @@ importlib.reload(fmrisim)
 
 class expdesign:
     
-    def __init__(self,edur,tevents,
-                 signal_mag,loadvolume,
-                 distribution,
-                 dist_param = None,
-                 cue_ratio = None, 
+    def __init__(self, loadvolume,
+                 signal_magnitude,
                  null_ratio = None,
                  noise = False,
                  nonlinear = True, 
-                 load = None,
+                 dist_parameter = None
                 ):
         
-        # self.lower_isi = l
-        # self.upper_isi = u
-        self.total_events = tevents
-        self.burn_in = 5
-        self.onsets_A = np.empty((0,1))
-        self.onsets_B = np.empty((0,1))
-        self.onsets_all = np.empty((0,1))
-        self.cue_ratio = cue_ratio # Value between 0-1
         self.null_ratio = null_ratio # Value between 0-1
-        self.temporal_res = 10.0 # How many timepoints per second of the stim function are to be generated?
-        self.event_duration = edur  # How long is each event
+        self.temporal_res = 10.0 # How many timepoints per second of the stim function are to be generated? ??
+        
         self.loadvolume = loadvolume
-        self.signal_magnitude = signal_mag
+        self.signal_magnitude = signal_magnitude
         self.noise = noise
-        self.nonlin = nonlinear
-        self.load = load
-        self.distribution = distribution
-        self.exp = dist_param
+        self.nonlinear = nonlinear
+        self.exp = dist_parameter
 
     
     def transient(self,etrain,etrain2,l,u):
@@ -177,6 +164,7 @@ class expdesign:
             return (w, a)
         
     def generate_tcourse(self, configurations, total_time, temporal_resolution):
+        print(configurations, total_time, temporal_resolution)
         tcourse_groups = []
         paradigm_configs = []
         time = 0
@@ -222,7 +210,7 @@ class expdesign:
     
     
     
-    def convert_tcourse_info_array(self, tcourse_info_array):
+    def __convert_tcourse_info_array(self, tcourse_info_array):
         tcourse = []
         time_point = 0
         for tcourse_info in tcourse_info_array:
@@ -230,23 +218,26 @@ class expdesign:
                 tcourse.append({ "time_point": time_point, "event_name": tcourse_info["name"], "intensity": tcourse_info["intensity"] })
             time_point += tcourse_info["duration"]
             
-        return tcourse
+        return (tcourse, time_point)
             
         
-    def fabricate_stimuli_function(self, tcourse_groups, temporal_resolution, total_time):
+    def __fabricate_stimuli_function(self, tcourse_groups, temporal_resolution, total_time):
         tcourse = []
         event_durations = []
         event_onsets = []
         onset_intensities = []
+        previous_trial_ending_time_point = 0;
         for tcourse_info_array in tcourse_groups:
-            current_event_onsets = self.convert_tcourse_info_array(tcourse_info_array)
+            (current_event_onsets, next_time_point) = self.__convert_tcourse_info_array(tcourse_info_array)
+            for temp_onset in current_event_onsets:
+                temp_onset["time_point"] += previous_trial_ending_time_point
             event_onsets.extend(current_event_onsets)
             tcourse.extend(map(lambda t : t["time_point"], current_event_onsets))
             event_durations.extend(map(lambda info: info["duration"], filter(lambda info: info["type"] == "event", tcourse_info_array)))
             onset_intensities.extend(map(lambda info: info["intensity"], filter(lambda info: info["type"] == "event", tcourse_info_array)))
+            previous_trial_ending_time_point = next_time_point
             
-        # print((tcourse, event_durations))
-            [0, 5]
+        print((tcourse, event_durations))
         stimuli_function = fmrisim.generate_stimfunction(onsets = tcourse,
                                                    event_durations = event_durations,
                                                    total_time = total_time,
@@ -258,15 +249,15 @@ class expdesign:
     
     def apply_transients(self, tcourse_groups, paradigm_configs, temporal_resolution, total_time, sub_imp = 0.8):
         
-        (stimuli_function, tcourse, event_onsets, onset_intensities) = self.fabricate_stimuli_function(tcourse_groups, temporal_resolution, total_time)
+        (stimuli_function, tcourse, event_onsets, onset_intensities) = self.__fabricate_stimuli_function(tcourse_groups, temporal_resolution, total_time)
         
         for paradigm_config_array in paradigm_configs:
             for paradigm_config in paradigm_config_array:
-                l = paradigm_config["lsis"] / 1000
-                u = paradigm_config["usis"] / 1000
+                l = paradigm_config["lsis"]
+                u = paradigm_config["usis"]
                 paradigm = paradigm_config["paradigm"]
-                i = paradigm_config["first_event_index"]
-                j = paradigm_config["second_event_index"]
+                i = int(paradigm_config["first_event_index"])
+                j = int(paradigm_config["second_event_index"])
                 tr = temporal_resolution
                 if paradigm == 'attnmap':
                     if l <= 7 and u <= 9:
@@ -306,7 +297,7 @@ class expdesign:
 
                 else:
                     raise ValueError('Invalid transient map arguement')
-        return stimuli_function
+        return (stimuli_function, tcourse, event_onsets, onset_intensities)
         
 
     def produce_signal(self, loadvolume, stimuli_function, temporal_resolution, is_non_linear, signal_magnitude, noiseAdded, hrf_type = 'double_gamma', cutome_hrf_params = None):
@@ -345,27 +336,28 @@ class expdesign:
     
 class expanalyse:
      
-    def __init__(self,data,contrast,expdesign):
+    def __init__(self, data, event_onsets, contrast, expdesign):
          
         self.expdesign = expdesign
 
         HRF = _dghrf()
         
-        events = filter(lambda info: info["type"] == 'event', data)
+        events = event_onsets
         self.boxcars = {}
         self.conv_boxcars = {}
         for event in events:
-            if event["name"] in self.boxcars:
+            if event["event_name"] in self.boxcars:
                 continue
             
-            self.boxcars[event["name"]] = np.zeros(np.size(data,3))
-            
-            current_event_onsets = filter(lambda onset: onset["event_name"] == event["name"], self.expdesign.event_onsets)
+            self.boxcars[event["event_name"]] = np.zeros(np.size(data,3))
+            current_event_onsets = list(filter(lambda onset: onset["event_name"] == event["event_name"], event_onsets))
+            print(current_event_onsets)
             current_onsets = map(lambda onset: onset["time_point"], current_event_onsets)
             for index, onset in enumerate(current_onsets):
-                self.boxcars[event["name"]][(onset / self.expdesign.loadvolume.tr).astype('int')] = current_event_onsets[index]["intensity"]
+                print(index, onset)
+                self.boxcars[event["event_name"]][(onset / self.expdesign.loadvolume.tr).astype('int')] = current_event_onsets[index]["intensity"]
             
-            self.conv_boxcars[event["name"]] = np.convolve(self.boxcars[event["name"]],HRF,'same')
+            self.conv_boxcars[event["event_name"]] = np.convolve(self.boxcars[event["event_name"]], HRF, 'same')
         
         
 #         self. boxcar_A = np.zeros(np.size(data,3))

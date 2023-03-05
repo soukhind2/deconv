@@ -33,81 +33,7 @@ class expdesign:
         self.nonlinear = nonlinear
         self.exp = dist_parameter
 
-    
-    def transient(self,etrain,etrain2,l,u):
-        '''
-        
-        Parameters
-        ----------
-        def transient : ndarray
-        etrain = default weighted stimfunction array
-        l = lower bound of isi
-        u = upper bound of isi
-        self.load = type of transient activity
-            'attnmap'- uses the default attention maintenance map for determining
-            the amount of maintenance
-            'wmmap'- uses the default WM maintenance map for determining
-            the amount of maintenance
-            'wmflat'- special case when neurons fire at an uniform and even rate
-            between two events  namely cue and target
-        Returns: 
-        Modified height adjusted stimweight array of target with transient properties
-        -------
-        None.
-        '''
-        tr = int(self.temporal_res)
-        sub_imp = 0.8
-        for i in np.arange(0,len(etrain)):
-            if etrain[i] == 1:
-                if self.load == 'attnmap':
-                    
-                    if l <= 7 and u <= 9:
-                        etrain[ i + 1 : i + 1 + tr * 1 ] = sub_imp                    
-                    elif ((l <= 7 and u >= 10 and u <= 13) or (l <= 5 and u >= 14)
-                          or (l == 8 and u >= 8 and u <= 9)
-                          or (l == 9 and u == 9)):
-                        etrain[ i + 1 : i + 1 + tr * 4 ] = sub_imp                    
-                        
-                    elif (((l == 6 or l == 7) and u >= 14 and u <= 20) 
-                          or ((l >=8 and l <= 10) and u >= 10 and u <= 13)
-                          or ((l >= 10 and l <= 13) and u >= 11 and u <= 13)):
-                        etrain[ i + 1 + tr*int(l/2)  : i + 1 + tr*int(l/2) + tr*1 ] = sub_imp                    
-        
-                        
-                    elif (((l == 8 or l == 9) and u >= 14 and u <= 20) 
-                        or ((l == 10 or l == 11) and u >= 14 and u <= 20)
-                        or ((l >= 12 and l <= 14) and u >= 14 and u <= 20)
-                        or ((l == 14 or l == 15) and u >= 15 and u <= 20)
-                        or (l >= 16 and u >= 15 and u <= 20)):
-                        etrain[ i + 1 + tr*int(l/2)  : i + 1 + tr*int(l/2) + tr*4 ] = sub_imp
-                        
-                    return etrain
-                elif self.load == 'wmmap':
-                    idxA = np.where(etrain == 1)[0][:]
-                    idxB = np.where(etrain2 == 1)[0][:]
-                    minl = min(len(idxA),len(idxB))
-                    for i in range(minl):
-                        if idxA[i] > idxB[i]:
-                            idxB[i] = 0  #This is used to treat for any error 
-                            # sampling, or when the two events are not alternate
-                    
-                    if ((l <= 9 and u <= 13) or (l <= 5)):
-                        for i in range(minl):
-                            if idxB[i]!= 0:
-                                etrain2[ idxA[i] + 1 : idxB[i] ] = sub_imp
-                                
-                    else:
-                        for i in range(minl):
-                            if idxB[i]!= 0:
-                                etrain2[ idxA[i] + 1 + tr*int(l/2) : idxB[i] ] = sub_imp 
-                    
-                    return etrain2
-
-                
-                else:
-                    raise ValueError('Invalid transient map arguement')
-
-    def create_jitter(self, lower_isi, upper_isi, distribution):
+    def __create_jitter(self, lower_isi, upper_isi, distribution):
         
         if distribution not in ['exp','uniform','stochastic_rapid','stochastic_interm','stochastic_slow']:
             raise ValueError('Invalid Distribution')
@@ -163,19 +89,21 @@ class expdesign:
             
             return (w, a)
         
-    def generate_tcourse(self, configurations, total_time, temporal_resolution):
-        print(configurations, total_time, temporal_resolution)
+    def generate_tcourse(self, configurations, total_time):
+        print(configurations, total_time)
         tcourse_groups = []
         paradigm_configs = []
         time = 0
-        for config in configurations:
-            current_event_duration = 0
+        # for config in configurations:
+        while True:
+            config = configurations[np.random.choice(np.arange(0, len(configurations)), size = 1)[0]]
+            current_trial_event_duration = 0
             current_config_tcourse = []
             current_paradigm_configs = []
             for i in range(0, len(config)):
                 event = config[i]
                 if event["type"] == "event":
-                    current_event_duration += event["event-duration"]
+                    current_trial_event_duration += event["event-duration"]
                     current_config_tcourse.append({ "duration": event["event-duration"], "type": "event", "name": event["name"], "intensity": float(event["intensity"]) if event["intensity"] is not None else 1.0 })
                 elif event["type"] == "inter-events":
                     lsis = event["lsis"]
@@ -185,27 +113,27 @@ class expdesign:
                     duration = 0
                     if lsis == usis:
                         duration = lsis
-                        current_config_tcourse.append({ "duration": lsis, "type": "inter-events" })
+                        current_config_tcourse.append({ "duration": duration, "type": "inter-events" })
                     else:
-                        (w, a) = self.create_jitter(lsis, usis, distribution)
-                        random_duration = int(np.random.choice(a, size = 1, p = w)[0])
+                        (w, a) = self.__create_jitter(lsis, usis, distribution)
+                        random_duration = np.random.choice(a, size = 1, p = w).astype('float16')[0]
                         duration = random_duration
-                        current_config_tcourse.append({ "duration": random_duration, "type": "inter-events" })
+                        current_config_tcourse.append({ "duration": duration, "type": "inter-events" })
                         
                     if paradigm is not None:
-                        previous_event_duration = current_config_tcourse[len(current_config_tcourse) - 2]["duration"]
-                        previous_event = time + current_event_duration - previous_event_duration
-                        current_paradigm_configs.append({ "paradigm": paradigm, "first_event_index": previous_event * temporal_resolution, "first_event_duration": previous_event_duration, "second_event_index": (time + current_event_duration + current_config_tcourse[len(current_config_tcourse) - 1]["duration"]) * temporal_resolution, "lsis": lsis, "usis": usis })
+                        previous_event_ending = time + current_trial_event_duration
+                        current_paradigm_configs.append({ "paradigm": paradigm, "inter_event_starting": previous_event_ending, "inter_event_duration": duration, "inter_event_ending": (previous_event_ending + duration), "lsis": lsis, "usis": usis })
                     
-                    current_event_duration += duration
+                    current_trial_event_duration += duration
                 
-            time += current_event_duration
+            time += current_trial_event_duration
             if time > total_time:
                 break;
             else:
                 tcourse_groups.append(current_config_tcourse)
                 paradigm_configs.append(current_paradigm_configs)
                 
+        print((tcourse_groups, paradigm_configs))
         return (tcourse_groups, paradigm_configs)
     
     
@@ -235,9 +163,9 @@ class expdesign:
             tcourse.extend(map(lambda t : t["time_point"], current_event_onsets))
             event_durations.extend(map(lambda info: info["duration"], filter(lambda info: info["type"] == "event", tcourse_info_array)))
             onset_intensities.extend(map(lambda info: info["intensity"], filter(lambda info: info["type"] == "event", tcourse_info_array)))
-            previous_trial_ending_time_point = next_time_point
+            previous_trial_ending_time_point += next_time_point
             
-        print((tcourse, event_durations))
+        print((tcourse, event_durations, onset_intensities))
         stimuli_function = fmrisim.generate_stimfunction(onsets = tcourse,
                                                    event_durations = event_durations,
                                                    total_time = total_time,
@@ -251,26 +179,31 @@ class expdesign:
         
         (stimuli_function, tcourse, event_onsets, onset_intensities) = self.__fabricate_stimuli_function(tcourse_groups, temporal_resolution, total_time)
         
+        print((stimuli_function, tcourse, event_onsets, onset_intensities))
+        
+        tr = temporal_resolution
+        
         for paradigm_config_array in paradigm_configs:
             for paradigm_config in paradigm_config_array:
                 l = paradigm_config["lsis"]
                 u = paradigm_config["usis"]
                 paradigm = paradigm_config["paradigm"]
-                i = int(paradigm_config["first_event_index"])
-                j = int(paradigm_config["second_event_index"])
-                tr = temporal_resolution
+                i = int(paradigm_config["inter_event_starting"] * tr)
+                j = int(paradigm_config["inter_event_ending"] * tr)
+                if stimuli_function[i] != 0:
+                    i += 1
                 if paradigm == 'attnmap':
                     if l <= 7 and u <= 9:
-                        stimuli_function[ i + 1 : i + 1 + tr * 1 ] = sub_imp                    
+                        stimuli_function[ i : i + tr * 1 ] = sub_imp                    
                     elif ((l <= 7 and u >= 10 and u <= 13) or (l <= 5 and u >= 14)
                           or (l == 8 and u >= 8 and u <= 9)
                           or (l == 9 and u == 9)):
-                        stimuli_function[ i + 1 : i + 1 + tr * 4 ] = sub_imp                    
+                        stimuli_function[ i : i + tr * 4 ] = sub_imp                    
 
                     elif (((l == 6 or l == 7) and u >= 14 and u <= 20) 
                           or ((l >=8 and l <= 10) and u >= 10 and u <= 13)
                           or ((l >= 10 and l <= 13) and u >= 11 and u <= 13)):
-                        stimuli_function[ i + 1 + tr * int(l/2)  : i + 1 + tr * int(l/2) + tr * 1 ] = sub_imp                    
+                        stimuli_function[ i + tr * int(l/2)  : i + tr * int(l/2) + tr * 1 ] = sub_imp                    
 
 
                     elif (((l == 8 or l == 9) and u >= 14 and u <= 20) 
@@ -278,7 +211,7 @@ class expdesign:
                         or ((l >= 12 and l <= 14) and u >= 14 and u <= 20)
                         or ((l == 14 or l == 15) and u >= 15 and u <= 20)
                         or (l >= 16 and u >= 15 and u <= 20)):
-                        stimuli_function[ i + 1 + tr * int(l/2)  : i + 1 + tr * int(l/2) + tr * 4 ] = sub_imp
+                        stimuli_function[ i + tr * int(l/2)  : i + tr * int(l/2) + tr * 4 ] = sub_imp
 
                 elif paradigm == 'wmmap':
                     # idxA = np.where(etrain == 1)[0][:]
@@ -290,13 +223,15 @@ class expdesign:
                     #         # sampling, or when the two events are not alternate
 
                     if ((l <= 9 and u <= 13) or (l <= 5)):
-                        stimuli_function[ i + 1 : j ] = sub_imp
+                        stimuli_function[ i : j ] = sub_imp
 
                     else:
-                        stimuli_function[ i + 1 + tr * int(l/2) : j ] = sub_imp 
+                        stimuli_function[ i + tr * int(l/2) : j ] = sub_imp 
 
                 else:
                     raise ValueError('Invalid transient map arguement')
+                    
+        print((stimuli_function, tcourse, event_onsets, onset_intensities))
         return (stimuli_function, tcourse, event_onsets, onset_intensities)
         
 

@@ -1,5 +1,6 @@
 from importlib import reload
-# design = reload(design)
+import design
+design = reload(design)
 from design import expdesign, expanalyse
 import numpy as np
 import loadvolume
@@ -21,25 +22,27 @@ parameters = {
                 "nonlinear" : True,
                 "hrf_type": 'double_gamma',
                 "cutome_hrf_params": None,
-                "contrast": np.array([1, 0, 0, 0])
+                "contrast": np.array([1, 0, 0, 0]),
+                "dist_parameter": 30
              }
 def run_experiment(parameters, loadvolume, config_filename):
     
     with open(config_filename) as f:
         lines = [line.rstrip() for line in f]
-    configs = [ parseExperimentConfigStr(line) for line in lines ]
+    configs = list(filter(lambda a: a, [ parseExperimentConfigStr(line) for line in lines ]))
     
     
-    d = expdesign(loadvolume, signal_magnitude = parameters["signal_mag"], null_ratio = parameters["null_ratio"], noise = parameters["noise"], nonlinear = parameters["nonlinear"])
+    d = expdesign(loadvolume, signal_magnitude = parameters["signal_mag"], null_ratio = parameters["null_ratio"], noise = parameters["noise"], nonlinear = parameters["nonlinear"], dist_parameter = parameters["dist_parameter"])
     
     total_time = int(loadvolume.dim[3] * loadvolume.tr)
     
+    temporal_resolution = 10
     
-    (tcourse, paradigm_configs) = d.generate_tcourse(configs, total_time = total_time, temporal_resolution = 10)
+    (tcourse, paradigm_configs) = d.generate_tcourse(configs, total_time = total_time)
     
-    (stimuli_function, tcourse, event_onsets, onset_intensities) = d.apply_transients(tcourse, paradigm_configs = paradigm_configs, temporal_resolution = 10, total_time = total_time, sub_imp = 0.8)
+    (stimuli_function, tcourse, event_onsets, onset_intensities) = d.apply_transients(tcourse, paradigm_configs = paradigm_configs, temporal_resolution = temporal_resolution, total_time = total_time, sub_imp = 0.8)
     
-    signal = d.produce_signal(loadvolume = d.loadvolume, stimuli_function = stimuli_function, temporal_resolution = 10, is_non_linear = d.nonlinear, signal_magnitude = d.signal_magnitude, noiseAdded = d.noise, hrf_type = parameters["hrf_type"], cutome_hrf_params = parameters["cutome_hrf_params"])
+    signal = d.produce_signal(loadvolume = d.loadvolume, stimuli_function = stimuli_function, temporal_resolution = temporal_resolution, is_non_linear = d.nonlinear, signal_magnitude = d.signal_magnitude, noiseAdded = d.noise, hrf_type = parameters["hrf_type"], cutome_hrf_params = parameters["cutome_hrf_params"])
     
     
     
@@ -93,5 +96,11 @@ def convertToExpermentConfig(configSubString):
     
 
 def parseExperimentConfigStr(configString):
+    configString = configString.split('#')[0].strip()
+    if configString == '':
+        return None
     elements = functools.reduce(lambda a, b: a + b, list(map(lambda s: s.split('['), configString.split(']'))))
-    return list(map(convertToExpermentConfig, list(filter(lambda e: e, elements))))
+    result = list(filter(lambda a: a, list(map(convertToExpermentConfig, list(filter(lambda e: e and e.strip() != '', elements))))))
+    if len(result) <= 0:
+        return None
+    return result

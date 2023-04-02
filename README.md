@@ -14,6 +14,12 @@ A future release will include support for multiple stimuli in a trial similar to
 &nbsp;  
 *Authors: Soukhin Das (UC Davis) & Weigang Yi (UC Davis), 2022*. 
 
+This toolbox implements the methods proposed in paper:
+
+Das S, Yi W, Ding M and Mangun GR (2023) Optimizing cognitive neuroscience experiments for separating event- related fMRI BOLD responses in non-randomized alternating designs. Front. Neuroimaging 2:1068616. doi: 10.3389/fnimg.2023.1068616
+
+If it helps you, please kindly cite this paper. https://www.frontiersin.org/articles/10.3389/fnimg.2023.1068616/full
+
 # Installation
 
 If you have ```git```, you can fetch a local copy:

@@ -3,7 +3,6 @@
 
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
-[![Github all releases](https://img.shields.io/github/downloads/Naereen/StrapDown.js/total.svg)](https://GitHub.com/Naereen/StrapDown.js/releases/)
 ![Visitors](https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fgithub.com%2Fsoukhind2%2Fdeconv%2F&labelColor=%23f47373&countColor=%2337d67a&style=plastic)
 
 The fMRI deconvolution toolbox is a Python package that has been developed on top of the fMRIsim module of BrainIAK. provide some additional information that will permit cognitive neuroscience researchers to develop optimal designs for many common experimental designs used in fMRI.  
